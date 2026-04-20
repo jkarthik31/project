@@ -1,0 +1,640 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Teacher Profile - Campus Nexus</title>
+    <link rel="stylesheet" href="css/style.css">
+    <style>
+        .profile-container {
+            max-width: 900px;
+            margin: 0 auto;
+            min-height: 100vh;
+            background: var(--bg-gray);
+            padding: var(--spacing-lg);
+        }
+
+        .profile-header {
+            background: white;
+            border-radius: var(--border-radius-lg);
+            padding: var(--spacing-xl);
+            box-shadow: var(--shadow-md);
+            margin-bottom: var(--spacing-lg);
+            display: flex;
+            gap: var(--spacing-xl);
+            align-items: flex-start;
+        }
+
+        .profile-picture-section {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: var(--spacing-md);
+        }
+
+        .profile-picture {
+            width: 180px;
+            height: 180px;
+            border-radius: 50%;
+            background: var(--bg-light);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 64px;
+            border: 3px solid var(--primary);
+            overflow: hidden;
+            object-fit: cover;
+        }
+
+        .profile-picture-image {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .upload-btn-wrapper {
+            position: relative;
+            overflow: hidden;
+            display: inline-block;
+            background: var(--primary);
+            color: white;
+            padding: var(--spacing-md) var(--spacing-lg);
+            border-radius: var(--border-radius-md);
+            cursor: pointer;
+            border: none;
+            font-size: var(--font-size-base);
+            transition: background 0.3s ease;
+        }
+
+        .upload-btn-wrapper:hover {
+            background: var(--secondary);
+        }
+
+        .upload-btn-wrapper input[type=file] {
+            position: absolute;
+            left: -9999px;
+        }
+
+        .profile-info-section {
+            flex: 1;
+        }
+
+        .profile-info-section h2 {
+            color: var(--primary);
+            margin: 0 0 var(--spacing-md) 0;
+        }
+
+        .info-row {
+            display: flex;
+            justify-content: space-between;
+            padding: var(--spacing-md) 0;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .info-row:last-child {
+            border-bottom: none;
+        }
+
+        .info-label {
+            font-weight: 600;
+            color: var(--text-secondary);
+        }
+
+        .info-value {
+            color: var(--text-primary);
+        }
+
+        .profile-content {
+            background: white;
+            border-radius: var(--border-radius-lg);
+            padding: var(--spacing-xl);
+            box-shadow: var(--shadow-md);
+        }
+
+        .tabs {
+            display: flex;
+            gap: var(--spacing-md);
+            margin-bottom: var(--spacing-lg);
+            border-bottom: 2px solid var(--border-color);
+            padding-bottom: var(--spacing-md);
+        }
+
+        .tab-btn {
+            background: none;
+            border: none;
+            color: var(--text-secondary);
+            font-size: var(--font-size-base);
+            font-weight: 600;
+            cursor: pointer;
+            padding: var(--spacing-md);
+            position: relative;
+            transition: color 0.3s ease;
+        }
+
+        .tab-btn.active {
+            color: var(--primary);
+        }
+
+        .tab-btn.active::after {
+            content: '';
+            position: absolute;
+            bottom: -var(--spacing-md);
+            left: 0;
+            right: 0;
+            height: 2px;
+            background: var(--primary);
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        .form-section {
+            margin-bottom: var(--spacing-lg);
+        }
+
+        .form-section h3 {
+            color: var(--primary);
+            margin-bottom: var(--spacing-md);
+        }
+
+        .form-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: var(--spacing-lg);
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: var(--spacing-sm);
+        }
+
+        .form-group label {
+            font-weight: 600;
+            color: var(--text-secondary);
+        }
+
+        .form-group input,
+        .form-group textarea,
+        .form-group select {
+            padding: var(--spacing-md);
+            border: 1px solid var(--border-color);
+            border-radius: var(--border-radius-md);
+            font-size: var(--font-size-base);
+            font-family: inherit;
+        }
+
+        .form-group textarea {
+            resize: vertical;
+            min-height: 100px;
+        }
+
+        .form-buttons {
+            display: flex;
+            gap: var(--spacing-md);
+            margin-top: var(--spacing-lg);
+        }
+
+        .btn {
+            padding: var(--spacing-md) var(--spacing-lg);
+            border: none;
+            border-radius: var(--border-radius-md);
+            font-size: var(--font-size-base);
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .btn-primary {
+            background: var(--primary);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: var(--secondary);
+            box-shadow: var(--shadow-md);
+        }
+
+        .btn-secondary {
+            background: var(--bg-light);
+            color: var(--primary);
+            border: 1px solid var(--primary);
+        }
+
+        .btn-secondary:hover {
+            background: var(--primary);
+            color: white;
+        }
+
+        .nav-header {
+            background: white;
+            padding: var(--spacing-lg);
+            border-radius: var(--border-radius-lg);
+            box-shadow: var(--shadow-md);
+            margin-bottom: var(--spacing-lg);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .nav-header h1 {
+            margin: 0;
+            color: var(--primary);
+        }
+
+        .nav-buttons {
+            display: flex;
+            gap: var(--spacing-md);
+        }
+
+        .nav-btn {
+            padding: var(--spacing-sm) var(--spacing-md);
+            background: var(--primary);
+            color: white;
+            border: none;
+            border-radius: var(--border-radius-md);
+            cursor: pointer;
+            transition: background 0.3s ease;
+        }
+
+        .nav-btn:hover {
+            background: var(--secondary);
+        }
+
+        @media (max-width: 768px) {
+            .profile-header {
+                flex-direction: column;
+                align-items: center;
+                text-align: center;
+            }
+
+            .info-row {
+                flex-direction: column;
+                gap: var(--spacing-sm);
+            }
+
+            .form-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .nav-header {
+                flex-direction: column;
+                gap: var(--spacing-md);
+                text-align: center;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Navigation Header -->
+    <div class="nav-header">
+        <h1>👨‍🏫 Teacher Profile</h1>
+        <div class="nav-buttons">
+            <button class="nav-btn" onclick="goToDashboard()">← Dashboard</button>
+            <button class="nav-btn" onclick="logoutUser()" style="background: var(--danger);">Logout</button>
+        </div>
+    </div>
+
+    <!-- Profile Container -->
+    <div class="profile-container">
+        <!-- Profile Header -->
+        <div class="profile-header">
+            <div class="profile-picture-section">
+                <div class="profile-picture" id="profilePictureDisplay">
+                    📷
+                </div>
+                <label class="upload-btn-wrapper">
+                    Upload Photo
+                    <input type="file" id="profilePhotoInput" accept="image/*" onchange="handlePhotoUpload(event)">
+                </label>
+                <small style="color: var(--text-secondary); text-align: center;">
+                    JPG, PNG up to 5MB
+                </small>
+            </div>
+
+            <div class="profile-info-section">
+                <h2 id="userName">Teacher Name</h2>
+                <div class="info-row">
+                    <span class="info-label">Email:</span>
+                    <span class="info-value" id="userEmail">email@college.edu</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">Department:</span>
+                    <span class="info-value" id="userDepartment">CSE</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">Join Date:</span>
+                    <span class="info-value" id="userJoinDate">Jan 01, 2024</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">Status:</span>
+                    <span class="info-value" style="color: var(--success);" id="userStatus">🟢 Active</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Profile Content -->
+        <div class="profile-content">
+            <!-- Tabs -->
+            <div class="tabs">
+                <button class="tab-btn active" onclick="switchTab(event, 'about')">About</button>
+                <button class="tab-btn" onclick="switchTab(event, 'qualifications')">Qualifications</button>
+                <button class="tab-btn" onclick="switchTab(event, 'expertise')">Expertise</button>
+            </div>
+
+            <!-- About Tab -->
+            <div id="about" class="tab-content active">
+                <div class="form-section">
+                    <h3>Personal Information</h3>
+                    <form id="aboutForm" onsubmit="saveAboutInfo(event)">
+                        <div class="form-grid">
+                            <div class="form-group">
+                                <label>Full Name</label>
+                                <input type="text" id="fullName" required placeholder="Enter your full name">
+                            </div>
+                            <div class="form-group">
+                                <label>Phone</label>
+                                <input type="tel" id="phone" placeholder="+91 98765 43210">
+                            </div>
+                            <div class="form-group">
+                                <label>Specialization</label>
+                                <input type="text" id="specialization" placeholder="e.g., Data Science, Web Development">
+                            </div>
+                            <div class="form-group">
+                                <label>Years of Experience</label>
+                                <input type="number" id="experience" min="0" placeholder="e.g., 5">
+                            </div>
+                        </div>
+                        <div class="form-group" style="margin-top: var(--spacing-lg);">
+                            <label>Bio</label>
+                            <textarea id="bio" placeholder="Tell about yourself..."></textarea>
+                        </div>
+                        <div class="form-buttons">
+                            <button type="submit" class="btn btn-primary">Save Changes</button>
+                            <button type="button" class="btn btn-secondary" onclick="resetAboutForm()">Cancel</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Qualifications Tab -->
+            <div id="qualifications" class="tab-content">
+                <div class="form-section">
+                    <h3>Educational Qualifications</h3>
+                    <form id="qualificationsForm" onsubmit="saveQualifications(event)">
+                        <div class="form-grid">
+                            <div class="form-group">
+                                <label>Highest Degree</label>
+                                <select id="highestDegree">
+                                    <option value="">Select degree</option>
+                                    <option value="BSc">BSc</option>
+                                    <option value="BTech">BTech</option>
+                                    <option value="MSc">MSc</option>
+                                    <option value="MTech">MTech</option>
+                                    <option value="PhD">PhD</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label>Field of Study</label>
+                                <input type="text" id="fieldOfStudy" placeholder="e.g., Computer Science">
+                            </div>
+                            <div class="form-group">
+                                <label>University</label>
+                                <input type="text" id="university" placeholder="e.g., IIT Delhi">
+                            </div>
+                            <div class="form-group">
+                                <label>Graduation Year</label>
+                                <input type="number" id="graduationYear" min="1950" max="2100" placeholder="e.g., 2015">
+                            </div>
+                        </div>
+                        <div class="form-buttons">
+                            <button type="submit" class="btn btn-primary">Save Qualifications</button>
+                            <button type="button" class="btn btn-secondary" onclick="resetQualificationsForm()">Cancel</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Expertise Tab -->
+            <div id="expertise" class="tab-content">
+                <div class="form-section">
+                    <h3>Areas of Expertise</h3>
+                    <form id="expertiseForm" onsubmit="saveExpertise(event)">
+                        <div class="form-group">
+                            <label>Skills & Expertise (comma-separated)</label>
+                            <textarea id="skills" placeholder="e.g., Python, Machine Learning, Data Analysis, Web Development"></textarea>
+                        </div>
+                        <div class="form-group">
+                            <label>Research Interests</label>
+                            <textarea id="researchInterests" placeholder="e.g., AI, Cloud Computing, Cybersecurity"></textarea>
+                        </div>
+                        <div class="form-group">
+                            <label>Publications/Projects</label>
+                            <textarea id="publications" placeholder="List any notable publications or projects..."></textarea>
+                        </div>
+                        <div class="form-buttons">
+                            <button type="submit" class="btn btn-primary">Save Expertise</button>
+                            <button type="button" class="btn btn-secondary" onclick="resetExpertiseForm()">Cancel</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="js/main.js"></script>
+    <script>
+        // ========== PROFILE INITIALIZATION ==========
+        function initializeProfile() {
+            const user = SessionManager.getCurrentUser();
+            
+            if (!user || user.role !== 'teacher') {
+                window.location.href = 'login.html';
+                return;
+            }
+
+            loadProfileData();
+        }
+
+        // ========== PHOTO UPLOAD ==========
+        function handlePhotoUpload(event) {
+            const file = event.target.files[0];
+            
+            if (!file) return;
+
+            if (file.size > 5 * 1024 * 1024) {
+                Toast.error('Image size must be less than 5MB');
+                return;
+            }
+
+            if (!file.type.startsWith('image/')) {
+                Toast.error('Please upload a valid image file');
+                return;
+            }
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const base64Image = e.target.result;
+                
+                const user = SessionManager.getCurrentUser();
+                const profileKey = `profile_teacher_${user.id}`;
+                const profileData = StorageHelper.get(profileKey, {});
+                
+                profileData.profilePhoto = base64Image;
+                StorageHelper.set(profileKey, profileData);
+                
+                displayProfilePhoto(base64Image);
+                Toast.success('Profile photo uploaded successfully!');
+            };
+            reader.readAsDataURL(file);
+        }
+
+        function displayProfilePhoto(base64Image) {
+            const display = document.getElementById('profilePictureDisplay');
+            
+            if (display.textContent === '📷') {
+                display.innerHTML = '';
+            }
+            
+            let img = display.querySelector('.profile-picture-image');
+            if (!img) {
+                img = document.createElement('img');
+                img.className = 'profile-picture-image';
+                display.appendChild(img);
+            }
+            
+            img.src = base64Image;
+        }
+
+        // ========== PROFILE DATA MANAGEMENT ==========
+        function loadProfileData() {
+            const user = SessionManager.getCurrentUser();
+            const profileKey = `profile_teacher_${user.id}`;
+            const profileData = StorageHelper.get(profileKey, {});
+
+            document.getElementById('userName').textContent = user.name || 'Teacher Name';
+            document.getElementById('userEmail').textContent = user.email || 'email@college.edu';
+            document.getElementById('userDepartment').textContent = user.department || 'CSE';
+            
+            const joinDate = user.createdAt 
+                ? new Date(user.createdAt).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })
+                : 'Jan 01, 2024';
+            document.getElementById('userJoinDate').textContent = joinDate;
+
+            if (profileData.profilePhoto) {
+                displayProfilePhoto(profileData.profilePhoto);
+            }
+
+            document.getElementById('fullName').value = profileData.fullName || user.name || '';
+            document.getElementById('phone').value = profileData.phone || '';
+            document.getElementById('specialization').value = profileData.specialization || '';
+            document.getElementById('experience').value = profileData.experience || '';
+            document.getElementById('bio').value = profileData.bio || '';
+
+            document.getElementById('highestDegree').value = profileData.highestDegree || '';
+            document.getElementById('fieldOfStudy').value = profileData.fieldOfStudy || '';
+            document.getElementById('university').value = profileData.university || '';
+            document.getElementById('graduationYear').value = profileData.graduationYear || '';
+
+            document.getElementById('skills').value = profileData.skills || '';
+            document.getElementById('researchInterests').value = profileData.researchInterests || '';
+            document.getElementById('publications').value = profileData.publications || '';
+        }
+
+        // ========== SAVE FUNCTIONS ==========
+        function saveAboutInfo(e) {
+            e.preventDefault();
+            
+            const user = SessionManager.getCurrentUser();
+            const profileKey = `profile_teacher_${user.id}`;
+            const profileData = StorageHelper.get(profileKey, {});
+
+            profileData.fullName = document.getElementById('fullName').value;
+            profileData.phone = document.getElementById('phone').value;
+            profileData.specialization = document.getElementById('specialization').value;
+            profileData.experience = document.getElementById('experience').value;
+            profileData.bio = document.getElementById('bio').value;
+
+            StorageHelper.set(profileKey, profileData);
+            Toast.success('Profile information updated!');
+            document.getElementById('userName').textContent = profileData.fullName || 'Teacher Name';
+        }
+
+        function saveQualifications(e) {
+            e.preventDefault();
+            
+            const user = SessionManager.getCurrentUser();
+            const profileKey = `profile_teacher_${user.id}`;
+            const profileData = StorageHelper.get(profileKey, {});
+
+            profileData.highestDegree = document.getElementById('highestDegree').value;
+            profileData.fieldOfStudy = document.getElementById('fieldOfStudy').value;
+            profileData.university = document.getElementById('university').value;
+            profileData.graduationYear = document.getElementById('graduationYear').value;
+
+            StorageHelper.set(profileKey, profileData);
+            Toast.success('Qualifications saved!');
+        }
+
+        function saveExpertise(e) {
+            e.preventDefault();
+            
+            const user = SessionManager.getCurrentUser();
+            const profileKey = `profile_teacher_${user.id}`;
+            const profileData = StorageHelper.get(profileKey, {});
+
+            profileData.skills = document.getElementById('skills').value;
+            profileData.researchInterests = document.getElementById('researchInterests').value;
+            profileData.publications = document.getElementById('publications').value;
+
+            StorageHelper.set(profileKey, profileData);
+            Toast.success('Expertise saved!');
+        }
+
+        // ========== RESET FUNCTIONS ==========
+        function resetAboutForm() {
+            loadProfileData();
+        }
+
+        function resetQualificationsForm() {
+            loadProfileData();
+        }
+
+        function resetExpertiseForm() {
+            loadProfileData();
+        }
+
+        // ========== TAB SWITCHING ==========
+        function switchTab(e, tabName) {
+            document.querySelectorAll('.tab-content').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            
+            document.querySelectorAll('.tab-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+
+            document.getElementById(tabName).classList.add('active');
+            e.target.classList.add('active');
+        }
+
+        // ========== NAVIGATION ==========
+        function goToDashboard() {
+            window.location.href = 'teacher.html';
+        }
+
+        function logoutUser() {
+            if (confirm('Are you sure you want to logout?')) {
+                SessionManager.logout();
+                window.location.href = 'login.html';
+            }
+        }
+
+        window.addEventListener('load', initializeProfile);
+    </script>
+</body>
+</html>

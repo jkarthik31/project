@@ -1,0 +1,1014 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Job Listings - Student Placement Portal</title>
+    <link rel="stylesheet" href="css/style.css">
+    <style>
+        .jobs-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: var(--spacing-xl);
+            flex-wrap: wrap;
+            gap: var(--spacing-md);
+            padding-bottom: var(--spacing-lg);
+            border-bottom: 2px solid rgba(0, 0, 0, 0.05);
+        }
+
+        .jobs-search {
+            display: flex;
+            gap: var(--spacing-md);
+            flex: 1;
+            min-width: 300px;
+            animation: slideInDown 0.5s ease;
+        }
+
+        .jobs-search input {
+            flex: 1;
+        }
+
+        .jobs-layout {
+            display: grid;
+            grid-template-columns: 250px 1fr;
+            gap: var(--spacing-lg);
+        }
+
+        .jobs-sidebar {
+            background: rgba(255, 255, 255, 0.8);
+            backdrop-filter: var(--blur-md);
+            padding: var(--spacing-lg);
+            border-radius: var(--border-radius-lg);
+            border: 1px solid rgba(255, 255, 255, 0.6);
+            height: fit-content;
+            box-shadow: var(--shadow-md);
+            position: sticky;
+            top: 100px;
+            transition: var(--transition);
+        }
+
+        .jobs-sidebar:hover {
+            box-shadow: var(--shadow-lg);
+            border-color: rgba(79, 70, 229, 0.2);
+        }
+
+        .filter-section {
+            margin-bottom: var(--spacing-lg);
+            padding-bottom: var(--spacing-lg);
+            border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+            animation: fadeIn 0.5s ease;
+        }
+
+        .filter-section:last-child {
+            border-bottom: none;
+            margin-bottom: 0;
+            padding-bottom: 0;
+        }
+
+        .filter-title {
+            font-weight: 700;
+            margin-bottom: var(--spacing-md);
+            background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            text-transform: uppercase;
+            font-size: var(--font-size-sm);
+            letter-spacing: 0.5px;
+        }
+
+        .filter-option {
+            display: flex;
+            align-items: center;
+            gap: var(--spacing-sm);
+            margin-bottom: var(--spacing-sm);
+            cursor: pointer;
+            padding: var(--spacing-xs) var(--spacing-sm);
+            border-radius: var(--border-radius);
+            transition: var(--transition-fast);
+        }
+
+        .filter-option:hover {
+            background: rgba(79, 70, 229, 0.05);
+        }
+
+        .filter-option input[type="checkbox"] {
+            cursor: pointer;
+            margin: 0;
+            transition: var(--transition-fast);
+        }
+
+        .filter-option label {
+            cursor: pointer;
+            margin: 0;
+            font-size: var(--font-size-sm);
+        }
+
+        .filter-range {
+            padding: var(--spacing-md);
+            background: linear-gradient(135deg, rgba(79, 70, 229, 0.05) 0%, rgba(79, 70, 229, 0.02) 100%);
+            border-radius: var(--border-radius-lg);
+            border: 1px solid rgba(79, 70, 229, 0.1);
+        }
+
+        .filter-range input[type="range"] {
+            width: 100%;
+            margin: var(--spacing-md) 0;
+        }
+
+        .range-values {
+            display: flex;
+            justify-content: space-between;
+            font-size: var(--font-size-sm);
+            font-weight: 600;
+            color: var(--secondary);
+        }
+
+        .clear-filters {
+            width: 100%;
+            margin-top: var(--spacing-lg);
+        }
+
+        .jobs-content {
+            display: flex;
+            flex-direction: column;
+            gap: var(--spacing-lg);
+        }
+
+        .jobs-count {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: var(--spacing-md);
+            background: linear-gradient(135deg, rgba(79, 70, 229, 0.05) 0%, rgba(79, 70, 229, 0.02) 100%);
+            border: 1px solid rgba(79, 70, 229, 0.1);
+            border-radius: var(--border-radius-lg);
+            margin-bottom: var(--spacing-lg);
+            animation: slideInUp 0.5s ease;
+        }
+
+        .jobs-count-text {
+            font-weight: 600;
+            background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .sort-options {
+            display: flex;
+            gap: var(--spacing-sm);
+        }
+
+        .sort-options select {
+            padding: var(--spacing-sm) var(--spacing-md);
+        }
+
+        .job-card {
+            background: rgba(255, 255, 255, 0.8);
+            backdrop-filter: var(--blur-md);
+            border-radius: var(--border-radius-lg);
+            padding: var(--spacing-lg);
+            box-shadow: var(--shadow-md);
+            transition: var(--transition);
+            border: 1px solid rgba(255, 255, 255, 0.6);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .job-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(135deg, rgba(79, 70, 229, 0.02) 0%, transparent 100%);
+            pointer-events: none;
+        }
+
+        .job-card:hover {
+            box-shadow: var(--shadow-lg);
+            border-color: rgba(79, 70, 229, 0.3);
+            transform: translateY(-8px);
+            background: rgba(255, 255, 255, 0.95);
+        }
+
+        .job-card-header {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            gap: var(--spacing-md);
+            margin-bottom: var(--spacing-md);
+            position: relative;
+            z-index: 1;
+        }
+
+        .job-card-info {
+            flex: 1;
+        }
+
+        .job-company {
+            display: flex;
+            align-items: center;
+            gap: var(--spacing-sm);
+            margin-bottom: var(--spacing-xs);
+        }
+
+        .job-company-logo {
+            width: 48px;
+            height: 48px;
+            border-radius: var(--border-radius-lg);
+            background: linear-gradient(135deg, var(--secondary) 0%, var(--secondary-light) 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+            font-size: 20px;
+            box-shadow: var(--shadow-md);
+            transition: var(--transition-fast);
+        }
+
+        .job-card:hover .job-company-logo {
+            transform: scale(1.1);
+        }
+
+        .job-company-name {
+            font-weight: 700;
+            color: var(--text-primary);
+            font-size: var(--font-size-sm);
+        }
+
+        .job-title {
+            font-size: var(--font-size-lg);
+            font-weight: 800;
+            margin-bottom: var(--spacing-sm);
+            background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .job-metadata {
+            display: flex;
+            flex-wrap: wrap;
+            gap: var(--spacing-md);
+            margin-bottom: var(--spacing-md);
+            font-size: var(--font-size-sm);
+            color: var(--text-secondary);
+        }
+
+        .job-meta-item {
+            display: flex;
+            align-items: center;
+            gap: var(--spacing-xs);
+        }
+
+        .job-status {
+            display: inline-block;
+            padding: var(--spacing-xs) var(--spacing-sm);
+            border-radius: 20px;
+            font-size: var(--font-size-xs);
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            backdrop-filter: var(--blur-sm);
+        }
+
+        .job-status.open {
+            background: linear-gradient(135deg, rgba(16, 185, 129, 0.15) 0%, rgba(16, 185, 129, 0.05) 100%);
+            color: var(--success);
+            border: 1px solid rgba(16, 185, 129, 0.3);
+        }
+
+        .job-status.closed {
+            background: linear-gradient(135deg, rgba(239, 68, 68, 0.15) 0%, rgba(239, 68, 68, 0.05) 100%);
+            color: var(--danger);
+            border: 1px solid rgba(239, 68, 68, 0.3);
+        }
+
+        .job-description {
+            color: var(--text-secondary);
+            margin-bottom: var(--spacing-md);
+            line-height: 1.7;
+            position: relative;
+            z-index: 1;
+        }
+
+        .job-requirements {
+            background: linear-gradient(135deg, rgba(79, 70, 229, 0.05) 0%, rgba(79, 70, 229, 0.02) 100%);
+            padding: var(--spacing-md);
+            border-radius: var(--border-radius-lg);
+            margin-bottom: var(--spacing-md);
+            border: 1px solid rgba(79, 70, 229, 0.1);
+            position: relative;
+            z-index: 1;
+        }
+
+        .job-requirements-title {
+            font-weight: 700;
+            margin-bottom: var(--spacing-sm);
+            font-size: var(--font-size-sm);
+            color: var(--secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .job-requirements-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: var(--spacing-sm);
+        }
+
+        .job-requirements-list li {
+            font-size: var(--font-size-sm);
+            display: flex;
+            align-items: center;
+            gap: var(--spacing-xs);
+            color: var(--text-secondary);
+        }
+
+        .job-requirements-list li::before {
+            content: "✓";
+            color: var(--success);
+            font-weight: bold;
+            font-size: 16px;
+        }
+
+        .job-footer {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            position: relative;
+            z-index: 1;
+            gap: var(--spacing-md);
+            padding-top: var(--spacing-md);
+            border-top: 1px solid var(--border-color);
+        }
+
+        .job-package {
+            display: flex;
+            align-items: baseline;
+            gap: var(--spacing-sm);
+        }
+
+        .job-package-label {
+            font-size: var(--font-size-sm);
+            color: var(--text-secondary);
+        }
+
+        .job-package-amount {
+            font-size: var(--font-size-lg);
+            font-weight: 700;
+            color: var(--secondary);
+        }
+
+        .job-actions {
+            display: flex;
+            gap: var(--spacing-md);
+            flex-wrap: wrap;
+        }
+
+        .job-actions .btn {
+            flex-shrink: 0;
+        }
+
+        .no-jobs {
+            text-align: center;
+            padding: var(--spacing-2xl);
+            background: white;
+            border-radius: var(--border-radius-lg);
+            color: var(--text-secondary);
+        }
+
+        .no-jobs-icon {
+            font-size: 64px;
+            margin-bottom: var(--spacing-md);
+        }
+
+        .pagination {
+            display: flex;
+            gap: var(--spacing-sm);
+            justify-content: center;
+            margin-top: var(--spacing-xl);
+        }
+
+        .pagination button {
+            padding: var(--spacing-sm) var(--spacing-md);
+            border: 1px solid var(--border-color);
+            background: white;
+            border-radius: var(--border-radius);
+            cursor: pointer;
+            font-weight: 600;
+            transition: var(--transition-fast);
+        }
+
+        .pagination button:hover {
+            background: var(--bg-gray);
+        }
+
+        .pagination button.active {
+            background: var(--secondary);
+            color: white;
+            border-color: var(--secondary);
+        }
+
+        @media (max-width: 768px) {
+            .jobs-layout {
+                grid-template-columns: 1fr;
+            }
+
+            .jobs-sidebar {
+                position: static;
+            }
+
+            .jobs-header {
+                flex-direction: column;
+            }
+
+            .jobs-search {
+                flex-direction: column;
+                width: 100%;
+            }
+
+            .job-card-header {
+                flex-direction: column;
+            }
+
+            .job-metadata {
+                flex-direction: column;
+                gap: var(--spacing-sm);
+            }
+
+            .job-footer {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Navigation Bar -->
+    <nav class="navbar">
+        <div class="navbar-container">
+            <a href="dashboard.html" class="navbar-brand">
+                <svg width="32" height="32" viewBox="0 0 32 32" fill="none">
+                    <rect width="32" height="32" rx="8" fill="#1E3A8A"/>
+                    <text x="50%" y="50%" text-anchor="middle" dy="0.3em" font-size="18" font-weight="bold" fill="white">S</text>
+                </svg>
+                <span>Campus Nexus</span>
+            </a>
+            <div class="navbar-menu">
+                <a href="dashboard.html">Dashboard</a>
+                <a href="jobs.html" class="active">Browse Jobs</a>
+                <a href="profile.html">Profile</a>
+                <a href="applications.html">Applications</a>
+            </div>
+            <div class="navbar-end">
+                <div style="display: flex; align-items: center; gap: var(--spacing-md);">
+                    <a href="profile.html" id="user-initials" style="width: 36px; height: 36px; border-radius: 50%; background: linear-gradient(135deg, var(--primary), var(--secondary)); display: flex; align-items: center; justify-content: center; color: white; font-weight: bold; text-decoration: none;">JD</a>
+                    <button style="background: none; border: none; cursor: pointer; color: var(--text-secondary); font-weight: 600;" onclick="logout()">Logout</button>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <div class="main-content" style="background: var(--bg-light);">
+        <div class="container">
+            <!-- Header -->
+            <h1 style="margin-bottom: var(--spacing-lg);">Browse Job Opportunities</h1>
+
+            <!-- Search and Filter -->
+            <div class="jobs-header">
+                <div class="jobs-search">
+                    <input type="text" id="jobSearch" placeholder="Search by role, company...">
+                    <button class="btn btn-secondary">Search</button>
+                </div>
+            </div>
+
+            <!-- Jobs Layout -->
+            <div class="jobs-layout">
+                <!-- Sidebar Filters -->
+                <div class="jobs-sidebar">
+                    <div class="filter-section">
+                        <h4 class="filter-title">Status</h4>
+                        <div class="filter-option">
+                            <input type="checkbox" id="filter-open" checked>
+                            <label for="filter-open">Open</label>
+                        </div>
+                        <div class="filter-option">
+                            <input type="checkbox" id="filter-closed">
+                            <label for="filter-closed">Closed</label>
+                        </div>
+                    </div>
+
+                    <div class="filter-section">
+                        <h4 class="filter-title">Job Type</h4>
+                        <div class="filter-option">
+                            <input type="checkbox" id="filter-full-time" checked>
+                            <label for="filter-full-time">Full-time</label>
+                        </div>
+                        <div class="filter-option">
+                            <input type="checkbox" id="filter-internship">
+                            <label for="filter-internship">Internship</label>
+                        </div>
+                        <div class="filter-option">
+                            <input type="checkbox" id="filter-contract">
+                            <label for="filter-contract">Contract</label>
+                        </div>
+                    </div>
+
+                    <div class="filter-section">
+                        <h4 class="filter-title">Package Range</h4>
+                        <div class="filter-range">
+                            <input type="range" id="packageRange" min="0" max="50" value="50">
+                            <div class="range-values">
+                                <span>0 LPA</span>
+                                <span id="packageDisplay">50 LPA</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="filter-section">
+                        <h4 class="filter-title">Location</h4>
+                        <div class="filter-option">
+                            <input type="checkbox" id="filter-bangalore" checked>
+                            <label for="filter-bangalore">Bangalore</label>
+                        </div>
+                        <div class="filter-option">
+                            <input type="checkbox" id="filter-mumbai">
+                            <label for="filter-mumbai">Mumbai</label>
+                        </div>
+                        <div class="filter-option">
+                            <input type="checkbox" id="filter-delhi">
+                            <label for="filter-delhi">Delhi</label>
+                        </div>
+                        <div class="filter-option">
+                            <input type="checkbox" id="filter-hyderabad">
+                            <label for="filter-hyderabad">Hyderabad</label>
+                        </div>
+                    </div>
+
+                    <button class="btn btn-outline btn-block clear-filters" onclick="clearAllFilters()">Clear All Filters</button>
+                </div>
+
+                <!-- Jobs Content -->
+                <div class="jobs-content">
+                    <!-- Jobs Count and Sort -->
+                    <div class="jobs-count">
+                        <div class="jobs-count-text">
+                            <span id="jobsCountText">Showing 8 jobs</span>
+                        </div>
+                        <div class="sort-options">
+                            <select id="sortBy" onchange="sortJobs(this.value)">
+                                <option value="latest">Latest</option>
+                                <option value="salary">Highest Salary</option>
+                                <option value="deadline">Deadline</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- Job Cards -->
+                    <div id="jobsList">
+                        <!-- Job Card 1 -->
+                        <div class="job-card">
+                            <div class="job-card-header">
+                                <div class="job-card-info">
+                                    <div class="job-company">
+                                        <div class="job-company-logo">T</div>
+                                        <span class="job-company-name">TCS</span>
+                                    </div>
+                                    <h3 class="job-title">Software Engineer (Full Stack)</h3>
+                                </div>
+                                <span class="job-status open">Open</span>
+                            </div>
+
+                            <div class="job-metadata">
+                                <div class="job-meta-item">📍 Bangalore, India</div>
+                                <div class="job-meta-item">💼 Full-time</div>
+                                <div class="job-meta-item">⏰ 5 days left to apply</div>
+                            </div>
+
+                            <p class="job-description">
+                                We are looking for talented Software Engineers to join our growing team. You'll work on cutting-edge projects, develop scalable solutions, and collaborate with top engineers.
+                            </p>
+
+                            <div class="job-requirements">
+                                <div class="job-requirements-title">Required Skills</div>
+                                <ul class="job-requirements-list">
+                                    <li>JavaScript</li>
+                                    <li>React</li>
+                                    <li>Node.js</li>
+                                    <li>MongoDB</li>
+                                </ul>
+                            </div>
+
+                            <div class="job-footer">
+                                <div class="job-package">
+                                    <span class="job-package-label">Package:</span>
+                                    <span class="job-package-amount">12 LPA</span>
+                                </div>
+                                <div class="job-actions">
+                                    <button class="btn btn-primary" onclick="applyJob('Software Engineer at TCS')">Apply Now</button>
+                                    <button class="btn btn-ghost" onclick="saveJob('Software Engineer at TCS')">❤️ Save</button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Job Card 2 -->
+                        <div class="job-card">
+                            <div class="job-card-header">
+                                <div class="job-card-info">
+                                    <div class="job-company">
+                                        <div class="job-company-logo" style="background: linear-gradient(135deg, #4F46E5, #38BDF8);">I</div>
+                                        <span class="job-company-name">Infosys</span>
+                                    </div>
+                                    <h3 class="job-title">Data Analyst</h3>
+                                </div>
+                                <span class="job-status open">Open</span>
+                            </div>
+
+                            <div class="job-metadata">
+                                <div class="job-meta-item">📍 Bangalore, India</div>
+                                <div class="job-meta-item">💼 Full-time</div>
+                                <div class="job-meta-item">⏰ 10 days left to apply</div>
+                            </div>
+
+                            <p class="job-description">
+                                Join our analytics team and help drive data-driven insights. Work with Python, SQL, and modern BI tools to solve complex business problems.
+                            </p>
+
+                            <div class="job-requirements">
+                                <div class="job-requirements-title">Required Skills</div>
+                                <ul class="job-requirements-list">
+                                    <li>Python</li>
+                                    <li>SQL</li>
+                                    <li>Tableau</li>
+                                    <li>Statistics</li>
+                                </ul>
+                            </div>
+
+                            <div class="job-footer">
+                                <div class="job-package">
+                                    <span class="job-package-label">Package:</span>
+                                    <span class="job-package-amount">10 LPA</span>
+                                </div>
+                                <div class="job-actions">
+                                    <button class="btn btn-primary" onclick="applyJob('Data Analyst at Infosys')">Apply Now</button>
+                                    <button class="btn btn-ghost" onclick="saveJob('Data Analyst at Infosys')">❤️ Save</button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Job Card 3 -->
+                        <div class="job-card">
+                            <div class="job-card-header">
+                                <div class="job-card-info">
+                                    <div class="job-company">
+                                        <div class="job-company-logo" style="background: linear-gradient(135deg, #38BDF8, #06B6D4);">W</div>
+                                        <span class="job-company-name">Wipro</span>
+                                    </div>
+                                    <h3 class="job-title">Java Developer</h3>
+                                </div>
+                                <span class="job-status open">Open</span>
+                            </div>
+
+                            <div class="job-metadata">
+                                <div class="job-meta-item">📍 Mumbai, India</div>
+                                <div class="job-meta-item">💼 Full-time</div>
+                                <div class="job-meta-item">⏰ 3 days left to apply</div>
+                            </div>
+
+                            <p class="job-description">
+                                Develop robust backend systems using Java and Spring Boot. Contribute to microservices architecture and cloud-based solutions.
+                            </p>
+
+                            <div class="job-requirements">
+                                <div class="job-requirements-title">Required Skills</div>
+                                <ul class="job-requirements-list">
+                                    <li>Java</li>
+                                    <li>Spring Boot</li>
+                                    <li>REST APIs</li>
+                                    <li>AWS</li>
+                                </ul>
+                            </div>
+
+                            <div class="job-footer">
+                                <div class="job-package">
+                                    <span class="job-package-label">Package:</span>
+                                    <span class="job-package-amount">13 LPA</span>
+                                </div>
+                                <div class="job-actions">
+                                    <button class="btn btn-primary" onclick="applyJob('Java Developer at Wipro')">Apply Now</button>
+                                    <button class="btn btn-ghost" onclick="saveJob('Java Developer at Wipro')">❤️ Save</button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Job Card 4 -->
+                        <div class="job-card">
+                            <div class="job-card-header">
+                                <div class="job-card-info">
+                                    <div class="job-company">
+                                        <div class="job-company-logo" style="background: linear-gradient(135deg, #10B981, #34D399);">A</div>
+                                        <span class="job-company-name">Accenture</span>
+                                    </div>
+                                    <h3 class="job-title">DevOps Engineer</h3>
+                                </div>
+                                <span class="job-status open">Open</span>
+                            </div>
+
+                            <div class="job-metadata">
+                                <div class="job-meta-item">📍 Delhi, India</div>
+                                <div class="job-meta-item">💼 Full-time</div>
+                                <div class="job-meta-item">⏰ 7 days left to apply</div>
+                            </div>
+
+                            <p class="job-description">
+                                Build and maintain CI/CD pipelines, infrastructure as code, and deployment automation. Work with Docker, Kubernetes, and cloud platforms.
+                            </p>
+
+                            <div class="job-requirements">
+                                <div class="job-requirements-title">Required Skills</div>
+                                <ul class="job-requirements-list">
+                                    <li>Docker</li>
+                                    <li>Kubernetes</li>
+                                    <li>Linux</li>
+                                    <li>CI/CD</li>
+                                </ul>
+                            </div>
+
+                            <div class="job-footer">
+                                <div class="job-package">
+                                    <span class="job-package-label">Package:</span>
+                                    <span class="job-package-amount">15 LPA</span>
+                                </div>
+                                <div class="job-actions">
+                                    <button class="btn btn-primary" onclick="applyJob('DevOps Engineer at Accenture')">Apply Now</button>
+                                    <button class="btn btn-ghost" onclick="saveJob('DevOps Engineer at Accenture')">❤️ Save</button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Job Card 5 -->
+                        <div class="job-card">
+                            <div class="job-card-header">
+                                <div class="job-card-info">
+                                    <div class="job-company">
+                                        <div class="job-company-logo" style="background: linear-gradient(135deg, #F59E0B, #FBBF24);">Am</div>
+                                        <span class="job-company-name">Amazon</span>
+                                    </div>
+                                    <h3 class="job-title">Cloud Solutions Architect</h3>
+                                </div>
+                                <span class="job-status open">Open</span>
+                            </div>
+
+                            <div class="job-metadata">
+                                <div class="job-meta-item">📍 Bangalore, India</div>
+                                <div class="job-meta-item">💼 Full-time</div>
+                                <div class="job-meta-item">⏰ 8 days left to apply</div>
+                            </div>
+
+                            <p class="job-description">
+                                Design scalable cloud solutions on AWS. Help customers optimize their cloud infrastructure and achieve business goals.
+                            </p>
+
+                            <div class="job-requirements">
+                                <div class="job-requirements-title">Required Skills</div>
+                                <ul class="job-requirements-list">
+                                    <li>AWS</li>
+                                    <li>Cloud Architecture</li>
+                                    <li>Python</li>
+                                    <li>Networking</li>
+                                </ul>
+                            </div>
+
+                            <div class="job-footer">
+                                <div class="job-package">
+                                    <span class="job-package-label">Package:</span>
+                                    <span class="job-package-amount">22 LPA</span>
+                                </div>
+                                <div class="job-actions">
+                                    <button class="btn btn-primary" onclick="applyJob('Cloud Solutions Architect at Amazon')">Apply Now</button>
+                                    <button class="btn btn-ghost" onclick="saveJob('Cloud Solutions Architect at Amazon')">❤️ Save</button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Job Card 6 -->
+                        <div class="job-card">
+                            <div class="job-card-header">
+                                <div class="job-card-info">
+                                    <div class="job-company">
+                                        <div class="job-company-logo" style="background: linear-gradient(135deg, #EF4444, #F87171);">G</div>
+                                        <span class="job-company-name">Google</span>
+                                    </div>
+                                    <h3 class="job-title">Frontend Engineer</h3>
+                                </div>
+                                <span class="job-status closed">Closed</span>
+                            </div>
+
+                            <div class="job-metadata">
+                                <div class="job-meta-item">📍 Hyderabad, India</div>
+                                <div class="job-meta-item">💼 Full-time</div>
+                                <div class="job-meta-item">⏰ Closed</div>
+                            </div>
+
+                            <p class="job-description">
+                                Build delightful user interfaces for Google products. Work with cutting-edge web technologies and impact billions of users.
+                            </p>
+
+                            <div class="job-requirements">
+                                <div class="job-requirements-title">Required Skills</div>
+                                <ul class="job-requirements-list">
+                                    <li>React/Vue</li>
+                                    <li>TypeScript</li>
+                                    <li>CSS</li>
+                                    <li>Web APIs</li>
+                                </ul>
+                            </div>
+
+                            <div class="job-footer">
+                                <div class="job-package">
+                                    <span class="job-package-label">Package:</span>
+                                    <span class="job-package-amount">25 LPA</span>
+                                </div>
+                                <div class="job-actions">
+                                    <button class="btn btn-primary" disabled>Applications Closed</button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Job Card 7 -->
+                        <div class="job-card">
+                            <div class="job-card-header">
+                                <div class="job-card-info">
+                                    <div class="job-company">
+                                        <div class="job-company-logo" style="background: linear-gradient(135deg, #06B6D4, #0891B2);">M</div>
+                                        <span class="job-company-name">Microsoft</span>
+                                    </div>
+                                    <h3 class="job-title">Machine Learning Engineer</h3>
+                                </div>
+                                <span class="job-status open">Open</span>
+                            </div>
+
+                            <div class="job-metadata">
+                                <div class="job-meta-item">📍 Bangalore, India</div>
+                                <div class="job-meta-item">💼 Full-time</div>
+                                <div class="job-meta-item">⏰ 12 days left to apply</div>
+                            </div>
+
+                            <p class="job-description">
+                                Develop machine learning models and deploy them at scale. Work with Azure ML, and contribute to AI-powered products used globally.
+                            </p>
+
+                            <div class="job-requirements">
+                                <div class="job-requirements-title">Required Skills</div>
+                                <ul class="job-requirements-list">
+                                    <li>Python</li>
+                                    <li>TensorFlow</li>
+                                    <li>ML Algorithms</li>
+                                    <li>Azure</li>
+                                </ul>
+                            </div>
+
+                            <div class="job-footer">
+                                <div class="job-package">
+                                    <span class="job-package-label">Package:</span>
+                                    <span class="job-package-amount">28 LPA</span>
+                                </div>
+                                <div class="job-actions">
+                                    <button class="btn btn-primary" onclick="applyJob('ML Engineer at Microsoft')">Apply Now</button>
+                                    <button class="btn btn-ghost" onclick="saveJob('ML Engineer at Microsoft')">❤️ Save</button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Job Card 8 -->
+                        <div class="job-card">
+                            <div class="job-card-header">
+                                <div class="job-card-info">
+                                    <div class="job-company">
+                                        <div class="job-company-logo" style="background: linear-gradient(135deg, #7C3AED, #A855F7);">I</div>
+                                        <span class="job-company-name">IBM</span>
+                                    </div>
+                                    <h3 class="job-title">Systems Administrator Internship</h3>
+                                </div>
+                                <span class="job-status open">Open</span>
+                            </div>
+
+                            <div class="job-metadata">
+                                <div class="job-meta-item">📍 Mumbai, India</div>
+                                <div class="job-meta-item">💼 Internship</div>
+                                <div class="job-meta-item">⏰ 6 days left to apply</div>
+                            </div>
+
+                            <p class="job-description">
+                                Gain practical experience managing enterprise IT systems. Support infrastructure operations and learn industry best practices.
+                            </p>
+
+                            <div class="job-requirements">
+                                <div class="job-requirements-title">Required Skills</div>
+                                <ul class="job-requirements-list">
+                                    <li>Linux/Windows</li>
+                                    <li>Networking</li>
+                                    <li>Scripting</li>
+                                    <li>Troubleshooting</li>
+                                </ul>
+                            </div>
+
+                            <div class="job-footer">
+                                <div class="job-package">
+                                    <span class="job-package-label">Stipend:</span>
+                                    <span class="job-package-amount">50k/month</span>
+                                </div>
+                                <div class="job-actions">
+                                    <button class="btn btn-primary" onclick="applyJob('Internship at IBM')">Apply Now</button>
+                                    <button class="btn btn-ghost" onclick="saveJob('Internship at IBM')">❤️ Save</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Pagination -->
+                    <div class="pagination">
+                        <button class="active">1</button>
+                        <button>2</button>
+                        <button>3</button>
+                        <button>→</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="js/main.js"></script>
+    <script>
+        // Check if user is logged in
+        if (!SessionManager.isLoggedIn()) {
+            window.location.href = 'login.html';
+        }
+
+        // Apply Job - Track application in UserDataManager
+        function applyJob(jobTitle) {
+            const currentUser = SessionManager.getCurrentUser();
+            if (!currentUser) return;
+            
+            // Extract company and position from jobTitle (format: "Position at Company")
+            const parts = jobTitle.split(' at ');
+            const position = parts[0];
+            const company = parts[1] || jobTitle;
+            
+            // Add application to UserDataManager
+            const added = UserDataManager.addApplication(currentUser.email, jobTitle, company, position, 'applied');
+            
+            if (added) {
+                Toast.success('Application submitted successfully! Check your dashboard to track status.');
+            } else {
+                Toast.warning('You have already applied for this position.');
+            }
+        }
+
+        // Save Job
+        function saveJob(jobTitle) {
+            Toast.success(`"${jobTitle}" has been saved to your wishlist!`);
+        }
+
+        // Filter and Sort
+        document.getElementById('packageRange')?.addEventListener('input', function() {
+            document.getElementById('packageDisplay').textContent = this.value + ' LPA';
+        });
+
+        function clearAllFilters() {
+            document.querySelectorAll('input[type="checkbox"]').forEach(cb => {
+                cb.checked = cb.id.includes('filter-open') || cb.id.includes('filter-full-time') || cb.id.includes('filter-bangalore');
+            });
+            document.getElementById('packageRange').value = 50;
+            document.getElementById('packageDisplay').textContent = '50 LPA';
+            Toast.info('Filters cleared');
+        }
+
+        function sortJobs(value) {
+            Toast.info(`Sorted by ${value}`);
+        }
+
+        // Logout function
+        function logout() {
+            if (confirm('Are you sure you want to logout?')) {
+                SessionManager.logout();
+                Toast.info('Logged out successfully');
+                setTimeout(() => {
+                    window.location.href = 'index.html';
+                }, 500);
+            }
+        }
+    </script>
+</body>
+</html>

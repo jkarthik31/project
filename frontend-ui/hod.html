@@ -1,0 +1,1175 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HOD Dashboard - Department Operations</title>
+    <link rel="stylesheet" href="css/style.css">
+    <style>
+        .hod-container {
+            min-height: 100vh;
+            background: var(--bg-gray);
+            padding: var(--spacing-lg);
+        }
+
+        .hod-header {
+            background: white;
+            padding: var(--spacing-lg);
+            border-radius: var(--border-radius-lg);
+            box-shadow: var(--shadow-md);
+            margin-bottom: var(--spacing-xl);
+            animation: slideDown 0.4s ease;
+        }
+
+        .hod-header-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: var(--spacing-lg);
+        }
+
+        .hod-header h1 {
+            color: var(--primary);
+            margin: 0;
+        }
+
+        .hod-stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: var(--spacing-lg);
+            margin-top: var(--spacing-lg);
+        }
+
+        .stat-box {
+            background: var(--bg-gray);
+            padding: var(--spacing-md);
+            border-radius: var(--border-radius-md);
+            text-align: center;
+            border-left: 3px solid var(--primary);
+            transition: all 0.3s ease;
+        }
+
+        .stat-box:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
+            border-left-color: var(--secondary);
+        }
+
+        .stat-number {
+            font-size: 24px;
+            font-weight: 800;
+            color: var(--primary);
+        }
+
+        .stat-label {
+            font-size: var(--font-size-sm);
+            color: var(--text-secondary);
+            margin-top: var(--spacing-sm);
+        }
+
+        .tabs {
+            display: flex;
+            gap: var(--spacing-md);
+            margin-bottom: var(--spacing-lg);
+            border-bottom: 1px solid var(--border-color);
+            background: white;
+            padding: var(--spacing-lg);
+            border-radius: var(--border-radius-lg);
+            box-shadow: var(--shadow-sm);
+        }
+
+        .tab-button {
+            padding: var(--spacing-md) var(--spacing-lg);
+            background: none;
+            border: none;
+            cursor: pointer;
+            font-size: var(--font-size-base);
+            color: var(--text-secondary);
+            border-bottom: 3px solid transparent;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+
+        .tab-button:hover {
+            color: var(--primary);
+        }
+
+        .tab-button.active {
+            color: var(--primary);
+            border-bottom-color: var(--primary);
+        }
+
+        .tab-content {
+            display: none;
+            background: white;
+            padding: var(--spacing-lg);
+            border-radius: var(--border-radius-lg);
+            box-shadow: var(--shadow-md);
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        .form-group {
+            margin-bottom: var(--spacing-lg);
+        }
+
+        .form-group label {
+            display: block;
+            font-weight: 600;
+            color: var(--primary);
+            margin-bottom: var(--spacing-sm);
+        }
+
+        .form-group input,
+        .form-group textarea,
+        .form-group select {
+            width: 100%;
+            padding: var(--spacing-md);
+            border: 1px solid var(--border-color);
+            border-radius: var(--border-radius-md);
+            font-size: var(--font-size-base);
+            font-family: inherit;
+            transition: all 0.3s ease;
+        }
+
+        .form-group input:focus,
+        .form-group textarea:focus,
+        .form-group select:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(30, 58, 138, 0.1);
+            background-color: rgba(30, 58, 138, 0.02);
+        }
+
+        .form-group textarea {
+            resize: vertical;
+            min-height: 100px;
+        }
+
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: var(--spacing-lg);
+        }
+
+        .form-buttons {
+            display: flex;
+            gap: var(--spacing-md);
+            justify-content: flex-end;
+        }
+
+        .form-buttons button {
+            padding: var(--spacing-md) var(--spacing-xl);
+            border: none;
+            border-radius: var(--border-radius-md);
+            font-weight: 600;
+            cursor: pointer;
+            font-size: var(--font-size-base);
+            transition: all 0.3s ease;
+        }
+
+        .btn-submit {
+            background: var(--primary);
+            color: white;
+        }
+
+        .btn-submit:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(30, 58, 138, 0.3);
+        }
+
+        .btn-submit:active {
+            transform: translateY(0);
+        }
+
+        .btn-cancel {
+            background: var(--bg-gray);
+            color: var(--text-secondary);
+        }
+
+        .btn-cancel:hover {
+            background: var(--border-color);
+        }
+
+        .table-container {
+            overflow-x: auto;
+        }
+
+        .table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: var(--font-size-sm);
+        }
+
+        .table th {
+            background: var(--bg-gray);
+            padding: var(--spacing-md);
+            text-align: left;
+            font-weight: 600;
+            color: var(--primary);
+            border-bottom: 2px solid var(--border-color);
+        }
+
+        .table td {
+            padding: var(--spacing-md);
+            border-bottom: 1px solid var(--border-color);
+            transition: background-color 0.3s ease;
+        }
+
+        .table tr:hover td {
+            background-color: rgba(30, 58, 138, 0.02);
+        }
+
+        .btn-small {
+            padding: var(--spacing-sm) var(--spacing-md);
+            border: none;
+            border-radius: var(--border-radius-md);
+            cursor: pointer;
+            font-size: var(--font-size-sm);
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+
+        .btn-edit:hover,
+        .btn-delete:hover,
+        .btn-close-job:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 16px rgba(0, 0, 0, 0.15);
+        }
+
+        .btn-edit:active,
+        .btn-delete:active,
+        .btn-close-job:active {
+            transform: translateY(0);
+            opacity: 0.95;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: var(--spacing-xl);
+            color: var(--text-secondary);
+        }
+
+        .empty-state p {
+            margin: var(--spacing-md) 0;
+        }
+
+        @keyframes slideDown {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @media (max-width: 768px) {
+            .hod-header-content {
+                flex-direction: column;
+                gap: var(--spacing-md);
+            }
+
+            .form-row {
+                grid-template-columns: 1fr;
+            }
+
+            .tabs {
+                flex-wrap: wrap;
+            }
+
+            .table {
+                font-size: var(--font-size-xs);
+            }
+
+            .table th,
+            .table td {
+                padding: var(--spacing-sm);
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Navigation Bar -->
+    <nav class="navbar">
+        <div class="navbar-container">
+            <a href="hod.html" class="navbar-brand">
+                <svg width="32" height="32" viewBox="0 0 32 32" fill="none">
+                    <rect width="32" height="32" rx="8" fill="#1E3A8A"/>
+                    <text x="50%" y="50%" text-anchor="middle" dy="0.3em" font-size="18" font-weight="bold" fill="white">H</text>
+                </svg>
+                <span>Campus Nexus - HOD</span>
+            </a>
+            <div class="navbar-end">
+                <span id="hodName" style="color: white; margin-right: var(--spacing-lg);">HOD</span>
+                <button class="btn btn-outline" onclick="logout()" style="border-color: white; color: white;">Logout</button>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Container -->
+    <div class="hod-container">
+        <!-- Header Stats -->
+        <div class="hod-header">
+            <div class="hod-header-content">
+                <div>
+                    <h1>Department Dashboard</h1>
+                    <p style="color: var(--text-secondary); margin: var(--spacing-sm) 0;">
+                        Department: <strong id="deptName">Computer Science & Engineering</strong>
+                    </p>
+                </div>
+                <div style="display: flex; gap: var(--spacing-md);">
+                    <button class="btn btn-secondary" onclick="window.location.href='hod-profile.html'" style="background: var(--secondary); color: white; border: none;">
+                        👤 My Profile
+                    </button>
+                    <button class="btn btn-primary" onclick="document.getElementById('jobModal').style.display='flex'">
+                        + Post New Job
+                    </button>
+                </div>
+            </div>
+
+            <div class="hod-stats">
+                <div class="stat-box">
+                    <div class="stat-number" id="totalStudents">145</div>
+                    <div class="stat-label">Total Students</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-number" id="activeJobs">8</div>
+                    <div class="stat-label">Active Jobs</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-number" id="totalApplications">312</div>
+                    <div class="stat-label">Applications</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-number" id="placedStudents">67</div>
+                    <div class="stat-label">Placed Students</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tabs Navigation -->
+        <div class="tabs">
+            <button class="tab-button active" onclick="switchTab('profiles')">Student Profiles</button>
+            <button class="tab-button" onclick="switchTab('jobs')">Job Postings</button>
+            <button class="tab-button" onclick="switchTab('teachers')">Manage Teachers</button>
+            <button class="tab-button" onclick="switchTab('students')">Manage Students</button>
+            <button class="tab-button" onclick="switchTab('approvals')">Teacher Approvals</button>
+            <button class="tab-button" onclick="switchTab('analytics')">Analytics</button>
+        </div>
+
+        <!-- Tab: Student Profiles -->
+        <div id="profiles" class="tab-content active">
+            <h3 style="color: var(--primary); margin-top: 0;">Student Profile Approvals</h3>
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>Name</th>
+                        <th>Roll No</th>
+                        <th>Status</th>
+                        <th>Teacher Remarks</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody id="studentProfilesTable">
+                    <!-- Will be populated by JavaScript -->
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Tab: Job Postings -->
+        <div id="jobs" class="tab-content">
+            <h3 style="color: var(--primary); margin-top: 0;">Active Job Postings</h3>
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>Position</th>
+                        <th>Company</th>
+                        <th>Package</th>
+                        <th>Deadline</th>
+                        <th>Status</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="jobPostingsTable">
+                    <!-- Will be populated by JavaScript -->
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Tab: Manage Teachers -->
+        <div id="teachers" class="tab-content">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: var(--spacing-lg);">
+                <h3 style="color: var(--primary); margin: 0;">Department Teachers</h3>
+                <button class="btn btn-secondary" onclick="openTeacherModal()">
+                    + Create Teacher Account
+                </button>
+            </div>
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>Name</th>
+                        <th>Email</th>
+                        <th>Status</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="teachersTable">
+                    <!-- Will be populated by JavaScript -->
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Tab: Analytics -->
+        <div id="analytics" class="tab-content">
+            <h3 style="color: var(--primary); margin-top: 0;">Department Analytics</h3>
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: var(--spacing-lg);">
+                <div style="background: var(--bg-gray); padding: var(--spacing-lg); border-radius: var(--border-radius-md);">
+                    <p style="color: var(--text-secondary); margin: 0 0 var(--spacing-md) 0;">Placement Rate</p>
+                    <p style="font-size: 28px; font-weight: 800; color: var(--primary); margin: 0;">46.2%</p>
+                </div>
+                <div style="background: var(--bg-gray); padding: var(--spacing-lg); border-radius: var(--border-radius-md);">
+                    <p style="color: var(--text-secondary); margin: 0 0 var(--spacing-md) 0;">Average Package</p>
+                    <p style="font-size: 28px; font-weight: 800; color: var(--secondary); margin: 0;">₹18.5 LPA</p>
+                </div>
+                <div style="background: var(--bg-gray); padding: var(--spacing-lg); border-radius: var(--border-radius-md);">
+                    <p style="color: var(--text-secondary); margin: 0 0 var(--spacing-md) 0;">Highest Package</p>
+                    <p style="font-size: 28px; font-weight: 800; color: #10B981; margin: 0;">₹48 LPA</p>
+                </div>
+            </div>
+            <button class="btn btn-primary" onclick="downloadReport()" style="margin-top: var(--spacing-lg);">
+                Download Report (PDF)
+            </button>
+        </div>
+
+        <!-- Tab: Manage Students -->
+        <div id="students" class="tab-content">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: var(--spacing-lg);">
+                <h3 style="color: var(--primary); margin: 0;">Department Students</h3>
+                <button class="btn btn-secondary" onclick="openStudentModal()">
+                    + Add Student
+                </button>
+            </div>
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>Name</th>
+                        <th>Roll No</th>
+                        <th>Email</th>
+                        <th>Status</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="studentsTable">
+                    <tr><td colspan="5" style="text-align: center; padding: var(--spacing-lg); color: var(--text-secondary);">No students added yet</td></tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Tab: Teacher Approvals -->
+        <div id="approvals" class="tab-content">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: var(--spacing-lg);">
+                <h3 style="color: var(--primary); margin: 0;">Teacher Access Approvals</h3>
+                <button class="btn btn-secondary" onclick="openTeacherApprovalModal()">
+                    + Grant Access
+                </button>
+            </div>
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>Teacher Name</th>
+                        <th>Email</th>
+                        <th>Features</th>
+                        <th>Status</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="approvalsTable">
+                    <tr><td colspan="5" style="text-align: center; padding: var(--spacing-lg); color: var(--text-secondary);">No approvals yet</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Job Posting Modal -->
+    <div id="jobModal" class="modal" style="display: none;">
+        <div class="modal-content" style="max-width: 600px;">
+            <div class="modal-header">
+                <h3>Post New Job</h3>
+                <button class="modal-close" onclick="closeJobModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="jobForm" onsubmit="submitJobForm(event)">
+                    <div class="form-group">
+                        <label>Job Title</label>
+                        <input type="text" required placeholder="e.g., Software Engineer">
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Company Name</label>
+                            <input type="text" required placeholder="Company">
+                        </div>
+                        <div class="form-group">
+                            <label>Package (LPA)</label>
+                            <input type="number" required placeholder="12.5">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>Description</label>
+                        <textarea required placeholder="Job description..."></textarea>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Application Deadline</label>
+                            <input type="date" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Job Type</label>
+                            <select required>
+                                <option>Full-time</option>
+                                <option>Internship</option>
+                                <option>Contract</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="form-buttons">
+                        <button type="button" class="btn-cancel" onclick="closeJobModal()">Cancel</button>
+                        <button type="submit" class="btn-submit">Post Job</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Teacher Creation Modal -->
+    <div id="teacherModal" class="modal" style="display: none;">
+        <div class="modal-content" style="max-width: 500px;">
+            <div class="modal-header">
+                <h3>Create Teacher Account</h3>
+                <button class="modal-close" onclick="closeTeacherModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="teacherForm" onsubmit="submitTeacherForm(event)">
+                    <div class="form-group">
+                        <label>Teacher Name</label>
+                        <input type="text" name="name" required placeholder="Full name">
+                    </div>
+                    <div class="form-group">
+                        <label>Email</label>
+                        <input type="email" name="email" required placeholder="teacher@college.edu">
+                    </div>
+                    <div class="form-group">
+                        <label>Password</label>
+                        <input type="password" name="password" required placeholder="Minimum 6 characters">
+                    </div>
+                    <div class="form-group">
+                        <label>Department (Auto-assigned)</label>
+                        <input type="text" name="department" disabled value="">
+                    </div>
+                    <div class="form-buttons">
+                        <button type="button" class="btn-cancel" onclick="closeTeacherModal()">Cancel</button>
+                        <button type="submit" class="btn-submit">Create Account</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Student Modal -->
+    <div id="studentModal" class="modal" style="display: none;">
+        <div class="modal-content" style="max-width: 500px;">
+            <div class="modal-header">
+                <h3>Add Student</h3>
+                <button class="modal-close" onclick="closeStudentModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="studentForm" onsubmit="submitStudentForm(event)">
+                    <div class="form-group">
+                        <label>Student Name</label>
+                        <input type="text" name="studentName" required placeholder="Full name">
+                    </div>
+                    <div class="form-group">
+                        <label>Roll Number</label>
+                        <input type="text" name="rollNo" required placeholder="e.g., CSE-2024-001">
+                    </div>
+                    <div class="form-group">
+                        <label>Email</label>
+                        <input type="email" name="studentEmail" required placeholder="student@college.edu">
+                    </div>
+                    <div class="form-group">
+                        <label>Password</label>
+                        <input type="password" name="studentPassword" required placeholder="Minimum 6 characters">
+                    </div>
+                    <div class="form-buttons">
+                        <button type="button" class="btn-cancel" onclick="closeStudentModal()">Cancel</button>
+                        <button type="submit" class="btn-submit">Add Student</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Teacher Approval Modal -->
+    <div id="approvalModal" class="modal" style="display: none;">
+        <div class="modal-content" style="max-width: 600px;">
+            <div class="modal-header">
+                <h3>Grant Teacher Access & Features</h3>
+                <button class="modal-close" onclick="closeTeacherApprovalModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="approvalForm" onsubmit="submitTeacherApproval(event)">
+                    <div class="form-group">
+                        <label>Select Teacher</label>
+                        <select id="teacherSelect" name="teacherId" required style="padding: var(--spacing-md); border: 1px solid var(--border-color); border-radius: var(--border-radius); font-size: var(--font-size-base); width: 100%;">
+                            <option value="">Choose a teacher...</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Features to Grant</label>
+                        <div style="display: flex; flex-direction: column; gap: var(--spacing-md);">
+                            <label style="display: flex; align-items: center; gap: var(--spacing-sm); font-weight: normal;">
+                                <input type="checkbox" name="features" value="viewStudents"> View Student Profiles
+                            </label>
+                            <label style="display: flex; align-items: center; gap: var(--spacing-sm); font-weight: normal;">
+                                <input type="checkbox" name="features" value="manageGrades"> Manage Student Grades
+                            </label>
+                            <label style="display: flex; align-items: center; gap: var(--spacing-sm); font-weight: normal;">
+                                <input type="checkbox" name="features" value="postNotices"> Post Notices & Announcements
+                            </label>
+                            <label style="display: flex; align-items: center; gap: var(--spacing-sm); font-weight: normal;">
+                                <input type="checkbox" name="features" value="viewApplications"> View Job Applications
+                            </label>
+                            <label style="display: flex; align-items: center; gap: var(--spacing-sm); font-weight: normal;">
+                                <input type="checkbox" name="features" value="approveStudents"> Approve Student Profiles
+                            </label>
+                        </div>
+                    </div>
+                    <div class="form-buttons">
+                        <button type="button" class="btn-cancel" onclick="closeTeacherApprovalModal()">Cancel</button>
+                        <button type="submit" class="btn-submit">Grant Access</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script src="js/main.js"></script>
+    <script>
+        // Mock data
+        const mockStudentProfiles = [
+            { id: 1, name: "Aarav Kumar", rollNo: "CSE-2024-001", status: "pending", remarks: "Good potential" },
+            { id: 2, name: "Priya Sharma", rollNo: "CSE-2024-002", status: "verified", remarks: "Excellent profile" }
+        ];
+
+        const mockJobs = [
+            { id: 1, title: "Software Engineer", company: "TCS", package: 12.5, deadline: "2026-02-15", status: "open" },
+            { id: 2, title: "Full Stack Developer", company: "Infosys", package: 15.0, deadline: "2026-02-28", status: "open" }
+        ];
+
+        const mockTeachers = [
+            { id: 1, name: "Dr. Rajesh Verma", email: "rajesh.verma@college.edu", status: "active" },
+            { id: 2, name: "Prof. Anjali Singh", email: "anjali.singh@college.edu", status: "active" }
+        ];
+
+        function switchTab(tabName) {
+            document.querySelectorAll('.tab-content').forEach(tab => tab.classList.remove('active'));
+            document.querySelectorAll('.tab-button').forEach(btn => btn.classList.remove('active'));
+            document.getElementById(tabName).classList.add('active');
+            event.target.classList.add('active');
+        }
+
+        function renderStudentProfiles() {
+            const table = document.getElementById('studentProfilesTable');
+            table.innerHTML = mockStudentProfiles.map(profile => `
+                <tr>
+                    <td>${profile.name}</td>
+                    <td>${profile.rollNo}</td>
+                    <td><span class="status-badge status-${profile.status}">${profile.status === 'pending' ? 'Pending' : 'Verified'}</span></td>
+                    <td>${profile.remarks}</td>
+                    <td>
+                        <div class="action-cell">
+                            ${profile.status === 'pending' ? `
+                                <button class="btn-small btn-edit" onclick="approveProfile(${profile.id})">Approve</button>
+                                <button class="btn-small btn-delete" onclick="rejectProfile(${profile.id})">Reject</button>
+                            ` : `<span style="color: var(--text-secondary);">-</span>`}
+                        </div>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        function renderJobs() {
+            const table = document.getElementById('jobPostingsTable');
+            table.innerHTML = mockJobs.map(job => `
+                <tr>
+                    <td>${job.title}</td>
+                    <td>${job.company}</td>
+                    <td>₹${job.package} LPA</td>
+                    <td>${new Date(job.deadline).toLocaleDateString()}</td>
+                    <td><span class="status-badge status-${job.status}">${job.status === 'open' ? 'Open' : 'Closed'}</span></td>
+                    <td>
+                        <div class="action-cell">
+                            <button class="btn-small btn-close-job" onclick="closeJob(${job.id})">Close</button>
+                        </div>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        function renderTeachers() {
+            const user = SessionManager.getCurrentUser();
+            const department = user.department || 'CSE';
+            const teachers = StorageHelper.get(`teachers_${department}`, []);
+            const table = document.getElementById('teachersTable');
+
+            if (teachers.length === 0) {
+                table.innerHTML = '<tr><td colspan="4" style="text-align: center; padding: var(--spacing-lg); color: var(--text-secondary);">No teachers created yet</td></tr>';
+                return;
+            }
+
+            table.innerHTML = teachers.map(teacher => `
+                <tr>
+                    <td>${teacher.name}</td>
+                    <td>${teacher.email}</td>
+                    <td><span class="status-badge status-open">${teacher.status}</span></td>
+                    <td>
+                        <div class="action-cell" style="display: flex; gap: var(--spacing-sm);">
+                            <button class="btn-small btn-edit" onclick="viewTeacherUpdates('${teacher.id}')" style="background: var(--primary); color: white; border: none; padding: var(--spacing-sm) var(--spacing-md);">Updates</button>
+                            <button class="btn-small btn-delete" onclick="removeTeacher('${teacher.id}')" style="background: var(--danger); color: white; border: none; padding: var(--spacing-sm) var(--spacing-md);">Remove</button>
+                        </div>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        function closeJobModal() {
+            document.getElementById('jobModal').style.display = 'none';
+            document.getElementById('jobForm').reset();
+        }
+
+        function openTeacherModal() {
+            // Get current user's department
+            const user = SessionManager.getCurrentUser();
+            const department = user.department || 'CSE';
+            
+            // Set department field
+            document.querySelector('#teacherForm input[name="department"]').value = department;
+            
+            // Reset other fields
+            document.querySelector('#teacherForm input[name="name"]').value = '';
+            document.querySelector('#teacherForm input[name="email"]').value = '';
+            document.querySelector('#teacherForm input[name="password"]').value = '';
+            
+            // Show modal
+            document.getElementById('teacherModal').style.display = 'flex';
+        }
+
+        function closeTeacherModal() {
+            document.getElementById('teacherModal').style.display = 'none';
+            document.getElementById('teacherForm').reset();
+        }
+
+        function submitJobForm(e) {
+            e.preventDefault();
+            Toast.success("Job posted successfully!");
+            closeJobModal();
+            renderJobs();
+        }
+
+        function submitTeacherForm(e) {
+            e.preventDefault();
+            
+            // Get form data
+            const teacherName = document.querySelector('#teacherForm input[name="name"]').value.trim();
+            const teacherEmail = document.querySelector('#teacherForm input[name="email"]').value.trim();
+            
+            if (!teacherName || !teacherEmail) {
+                Toast.error('Please fill all required fields');
+                return;
+            }
+
+            // Get current user (HOD)
+            const user = SessionManager.getCurrentUser();
+            const department = user.department || 'CSE';
+
+            // Get existing teachers
+            const departmentTeachers = StorageHelper.get(`teachers_${department}`, []);
+
+            // Check if teacher already exists
+            if (departmentTeachers.some(t => t.email === teacherEmail)) {
+                Toast.error('Teacher with this email already exists');
+                return;
+            }
+
+            // Add new teacher
+            const newTeacher = {
+                id: Date.now(),
+                name: teacherName,
+                email: teacherEmail,
+                department: department,
+                createdAt: new Date().toISOString(),
+                createdBy: user.name,
+                status: 'active',
+                updates: []
+            };
+
+            departmentTeachers.push(newTeacher);
+            StorageHelper.set(`teachers_${department}`, departmentTeachers);
+
+            Toast.success(`Teacher "${teacherName}" created successfully!`);
+            closeTeacherModal();
+            renderTeachers();
+        }
+
+        function approveProfile(id) {
+            const profile = mockStudentProfiles.find(p => p.id === id);
+            profile.status = 'verified';
+            renderStudentProfiles();
+            Toast.success(`${profile.name}'s profile approved.`);
+        }
+
+        function rejectProfile(id) {
+            const profile = mockStudentProfiles.find(p => p.id === id);
+            profile.status = 'rejected';
+            renderStudentProfiles();
+            Toast.error(`${profile.name}'s profile rejected.`);
+        }
+
+        function closeJob(id) {
+            const job = mockJobs.find(j => j.id === id);
+            job.status = 'closed';
+            renderJobs();
+            Toast.info(`${job.title} job closed.`);
+        }
+
+        function removeTeacher(id) {
+            if (confirm('Are you sure you want to remove this teacher?')) {
+                const user = SessionManager.getCurrentUser();
+                const department = user.department || 'CSE';
+                const teachers = StorageHelper.get(`teachers_${department}`, []);
+                const index = teachers.findIndex(t => t.id === parseInt(id) || t.id === id);
+                
+                if (index !== -1) {
+                    const teacherName = teachers[index].name;
+                    teachers.splice(index, 1);
+                    StorageHelper.set(`teachers_${department}`, teachers);
+                    Toast.success(`${teacherName} removed successfully`);
+                    renderTeachers();
+                }
+            }
+        }
+
+        function downloadReport() {
+            Toast.success("Report downloaded as PDF.");
+        }
+
+        function viewTeacherUpdates(teacherId) {
+            const user = SessionManager.getCurrentUser();
+            const department = user.department || 'CSE';
+            const teachers = StorageHelper.get(`teachers_${department}`, []);
+            const teacher = teachers.find(t => t.id === parseInt(teacherId) || t.id === teacherId);
+
+            if (!teacher) {
+                Toast.error('Teacher not found');
+                return;
+            }
+
+            const updates = teacher.updates || [];
+            const updatesList = updates.length > 0 
+                ? updates.map(u => `<div style="background: var(--bg-light); padding: var(--spacing-md); border-radius: var(--border-radius-md); margin-bottom: var(--spacing-md);">
+                    <p style="margin: 0; font-weight: 600;">${u.title}</p>
+                    <p style="margin: var(--spacing-xs) 0 0 0; color: var(--text-secondary); font-size: var(--font-size-sm);">${u.message}</p>
+                    <p style="margin: var(--spacing-xs) 0 0 0; color: var(--text-muted); font-size: var(--font-size-xs);">${new Date(u.timestamp).toLocaleString()}</p>
+                  </div>`).join('')
+                : '<p style="color: var(--text-secondary); text-align: center;">No updates from this teacher yet</p>';
+
+            alert(`Teacher Updates for ${teacher.name}\n\n${updates.length} update(s) received`);
+            Toast.info(`${teacher.name} has ${updates.length} update(s)`);
+        }
+
+        function logout() {
+            SessionManager.logout();
+            window.location.href = 'login.html';
+        }
+
+        // ========== STUDENT MANAGEMENT FUNCTIONS ==========
+        function openStudentModal() {
+            document.getElementById('studentForm').reset();
+            document.getElementById('studentModal').style.display = 'flex';
+        }
+
+        function closeStudentModal() {
+            document.getElementById('studentModal').style.display = 'none';
+            document.getElementById('studentForm').reset();
+        }
+
+        function submitStudentForm(e) {
+            e.preventDefault();
+            
+            const studentName = document.querySelector('#studentForm input[name="studentName"]').value.trim();
+            const rollNo = document.querySelector('#studentForm input[name="rollNo"]').value.trim();
+            const studentEmail = document.querySelector('#studentForm input[name="studentEmail"]').value.trim();
+            const studentPassword = document.querySelector('#studentForm input[name="studentPassword"]').value.trim();
+            
+            if (!studentName || !rollNo || !studentEmail || !studentPassword) {
+                Toast.error('Please fill all required fields');
+                return;
+            }
+
+            const user = SessionManager.getCurrentUser();
+            const department = user.department || 'CSE';
+            
+            const students = StorageHelper.get(`students_${department}`, []);
+            
+            if (students.some(s => s.email === studentEmail)) {
+                Toast.error('Student with this email already exists');
+                return;
+            }
+            
+            if (students.some(s => s.rollNo === rollNo)) {
+                Toast.error('Student with this roll number already exists');
+                return;
+            }
+
+            const newStudent = {
+                id: Date.now(),
+                name: studentName,
+                rollNo: rollNo,
+                email: studentEmail,
+                password: studentPassword,
+                department: department,
+                createdAt: new Date().toISOString(),
+                createdBy: user.name,
+                status: 'active',
+                approvedTeachers: []
+            };
+
+            students.push(newStudent);
+            StorageHelper.set(`students_${department}`, students);
+            
+            Toast.success(`Student "${studentName}" added successfully!`);
+            closeStudentModal();
+            renderStudents();
+        }
+
+        function renderStudents() {
+            const user = SessionManager.getCurrentUser();
+            const department = user.department || 'CSE';
+            const students = StorageHelper.get(`students_${department}`, []);
+            const table = document.getElementById('studentsTable');
+
+            if (students.length === 0) {
+                table.innerHTML = '<tr><td colspan="5" style="text-align: center; padding: var(--spacing-lg); color: var(--text-secondary);">No students added yet</td></tr>';
+                return;
+            }
+
+            table.innerHTML = students.map(student => `
+                <tr>
+                    <td>${student.name}</td>
+                    <td>${student.rollNo}</td>
+                    <td>${student.email}</td>
+                    <td><span class="status-badge status-open">${student.status}</span></td>
+                    <td>
+                        <div class="action-cell" style="display: flex; gap: var(--spacing-sm);">
+                            <button class="btn-small btn-edit" onclick="editStudent('${student.id}')" style="background: var(--primary); color: white; border: none; padding: var(--spacing-sm) var(--spacing-md);">Edit</button>
+                            <button class="btn-small btn-delete" onclick="removeStudent('${student.id}')" style="background: var(--danger); color: white; border: none; padding: var(--spacing-sm) var(--spacing-md);">Remove</button>
+                        </div>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        function editStudent(studentId) {
+            Toast.info('Student edit feature coming soon');
+        }
+
+        function removeStudent(studentId) {
+            if (confirm('Are you sure you want to remove this student?')) {
+                const user = SessionManager.getCurrentUser();
+                const department = user.department || 'CSE';
+                const students = StorageHelper.get(`students_${department}`, []);
+                const index = students.findIndex(s => s.id === parseInt(studentId) || s.id === studentId);
+                
+                if (index !== -1) {
+                    const studentName = students[index].name;
+                    students.splice(index, 1);
+                    StorageHelper.set(`students_${department}`, students);
+                    Toast.success(`${studentName} removed successfully`);
+                    renderStudents();
+                }
+            }
+        }
+
+        // ========== TEACHER APPROVAL FUNCTIONS ==========
+        function openTeacherApprovalModal() {
+            const user = SessionManager.getCurrentUser();
+            const department = user.department || 'CSE';
+            const teachers = StorageHelper.get(`teachers_${department}`, []);
+            
+            const teacherSelect = document.getElementById('teacherSelect');
+            teacherSelect.innerHTML = '<option value="">Choose a teacher...</option>' + 
+                teachers.map(t => `<option value="${t.id}">${t.name} (${t.email})</option>`).join('');
+            
+            document.getElementById('approvalForm').reset();
+            document.getElementById('approvalModal').style.display = 'flex';
+        }
+
+        function closeTeacherApprovalModal() {
+            document.getElementById('approvalModal').style.display = 'none';
+            document.getElementById('approvalForm').reset();
+        }
+
+        function submitTeacherApproval(e) {
+            e.preventDefault();
+            
+            const teacherId = document.getElementById('teacherSelect').value;
+            const featureCheckboxes = document.querySelectorAll('#approvalForm input[name="features"]:checked');
+            const features = Array.from(featureCheckboxes).map(cb => cb.value);
+
+            if (!teacherId) {
+                Toast.error('Please select a teacher');
+                return;
+            }
+
+            if (features.length === 0) {
+                Toast.error('Please select at least one feature');
+                return;
+            }
+
+            const user = SessionManager.getCurrentUser();
+            const department = user.department || 'CSE';
+            
+            const approvals = StorageHelper.get(`teacher_approvals_${department}`, []);
+            
+            // Check if teacher already has approvals
+            const existingApproval = approvals.find(a => a.teacherId === teacherId);
+            
+            if (existingApproval) {
+                // Update existing approval
+                existingApproval.features = features;
+                existingApproval.updatedAt = new Date().toISOString();
+            } else {
+                // Create new approval
+                const teachers = StorageHelper.get(`teachers_${department}`, []);
+                const teacher = teachers.find(t => t.id === parseInt(teacherId));
+                
+                if (!teacher) {
+                    Toast.error('Teacher not found');
+                    return;
+                }
+
+                approvals.push({
+                    id: Date.now(),
+                    teacherId: teacherId,
+                    teacherName: teacher.name,
+                    teacherEmail: teacher.email,
+                    features: features,
+                    grantedBy: user.name,
+                    grantedAt: new Date().toISOString(),
+                    updatedAt: new Date().toISOString(),
+                    status: 'active'
+                });
+            }
+
+            StorageHelper.set(`teacher_approvals_${department}`, approvals);
+            Toast.success('Teacher access granted successfully!');
+            closeTeacherApprovalModal();
+            renderTeacherApprovals();
+        }
+
+        function renderTeacherApprovals() {
+            const user = SessionManager.getCurrentUser();
+            const department = user.department || 'CSE';
+            const approvals = StorageHelper.get(`teacher_approvals_${department}`, []);
+            const table = document.getElementById('approvalsTable');
+
+            if (approvals.length === 0) {
+                table.innerHTML = '<tr><td colspan="5" style="text-align: center; padding: var(--spacing-lg); color: var(--text-secondary);">No approvals yet</td></tr>';
+                return;
+            }
+
+            table.innerHTML = approvals.map(approval => `
+                <tr>
+                    <td>${approval.teacherName}</td>
+                    <td>${approval.teacherEmail}</td>
+                    <td>
+                        <div style="font-size: var(--font-size-sm); display: flex; flex-wrap: wrap; gap: 4px;">
+                            ${approval.features.map(f => `<span style="background: var(--primary); color: white; padding: 2px 8px; border-radius: 12px;">${f}</span>`).join('')}
+                        </div>
+                    </td>
+                    <td><span class="status-badge status-open">${approval.status}</span></td>
+                    <td>
+                        <div class="action-cell" style="display: flex; gap: var(--spacing-sm);">
+                            <button class="btn-small btn-edit" onclick="editTeacherApproval('${approval.id}')" style="background: var(--primary); color: white; border: none; padding: var(--spacing-sm) var(--spacing-md);">Edit</button>
+                            <button class="btn-small btn-delete" onclick="removeTeacherApproval('${approval.id}')" style="background: var(--danger); color: white; border: none; padding: var(--spacing-sm) var(--spacing-md);">Revoke</button>
+                        </div>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        function editTeacherApproval(approvalId) {
+            Toast.info('Edit approval feature coming soon');
+        }
+
+        function removeTeacherApproval(approvalId) {
+            if (confirm('Are you sure you want to revoke this teacher\'s access?')) {
+                const user = SessionManager.getCurrentUser();
+                const department = user.department || 'CSE';
+                const approvals = StorageHelper.get(`teacher_approvals_${department}`, []);
+                const index = approvals.findIndex(a => a.id === parseInt(approvalId) || a.id === approvalId);
+                
+                if (index !== -1) {
+                    const teacherName = approvals[index].teacherName;
+                    approvals.splice(index, 1);
+                    StorageHelper.set(`teacher_approvals_${department}`, approvals);
+                    Toast.success(`Access revoked for ${teacherName}`);
+                    renderTeacherApprovals();
+                }
+            }
+        }
+
+        function logout() {
+            SessionManager.logout();
+            window.location.href = 'login.html';
+        }
+
+        window.addEventListener('load', () => {
+            const user = SessionManager.getCurrentUser();
+            if (!user) {
+                window.location.href = 'login.html';
+                return;
+            }
+            if (user.role !== 'hod') {
+                Toast.error('Unauthorized access');
+                window.location.href = 'index.html';
+                return;
+            }
+            document.getElementById('hodName').textContent = user.name || 'HOD';
+            document.getElementById('deptName').textContent = user.department || 'Department';
+            renderStudentProfiles();
+            renderJobs();
+            renderTeachers();
+            renderStudents();
+            renderTeacherApprovals();
+        });
+
+        // Close modals on background click
+        document.getElementById('jobModal').addEventListener('click', (e) => {
+            if (e.target === document.getElementById('jobModal')) closeJobModal();
+        });
+        document.getElementById('teacherModal').addEventListener('click', (e) => {
+            if (e.target === document.getElementById('teacherModal')) closeTeacherModal();
+        });
+        document.getElementById('studentModal').addEventListener('click', (e) => {
+            if (e.target === document.getElementById('studentModal')) closeStudentModal();
+        });
+        document.getElementById('approvalModal').addEventListener('click', (e) => {
+            if (e.target === document.getElementById('approvalModal')) closeTeacherApprovalModal();
+        });
+    </script>
+</body>
+</html>

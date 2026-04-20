@@ -1,0 +1,966 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Student Placement Portal - Home</title>
+    <link rel="stylesheet" href="css/style.css">
+    <style>
+        /* Landing page specific styles */
+        .hero {
+            position: relative;
+            height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+            color: white;
+        }
+
+        .hero::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 600"><defs><pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse"><path d="M 40 0 L 0 0 0 40" fill="none" stroke="rgba(255,255,255,0.1)" stroke-width="1"/></pattern></defs><rect width="1200" height="600" fill="url(%23grid)"/></svg>');
+            opacity: 0.15;
+            animation: moveBackground 20s ease-in-out infinite;
+        }
+
+        @keyframes moveBackground {
+            0%, 100% { transform: translate(0, 0); }
+            50% { transform: translate(-10px, -10px); }
+        }
+
+        .hero::after {
+            content: '';
+            position: absolute;
+            top: -50%;
+            right: -10%;
+            width: 600px;
+            height: 600px;
+            background: radial-gradient(circle, rgba(255, 255, 255, 0.2) 0%, transparent 70%);
+            border-radius: 50%;
+            pointer-events: none;
+            animation: float 8s ease-in-out infinite;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(30px); }
+        }
+
+        .hero-content {
+            position: relative;
+            z-index: 2;
+            text-align: center;
+            max-width: 800px;
+            padding: var(--spacing-lg);
+            animation: slideInUp 0.8s ease;
+        }
+
+        .hero h1 {
+            font-size: clamp(32px, 8vw, 56px);
+            margin-bottom: var(--spacing-md);
+            font-weight: 800;
+            letter-spacing: -1px;
+            text-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+        }
+
+        .hero p {
+            font-size: clamp(16px, 4vw, 24px);
+            margin-bottom: var(--spacing-xl);
+            color: rgba(255, 255, 255, 0.95);
+            font-weight: 300;
+            line-height: 1.6;
+        }
+
+        .hero-buttons {
+            display: flex;
+            gap: var(--spacing-md);
+            justify-content: center;
+            flex-wrap: wrap;
+            animation: slideInUp 1s ease 0.2s both;
+        }
+
+        .btn-hero {
+            padding: var(--spacing-md) var(--spacing-xl);
+            font-size: var(--font-size-lg);
+            text-decoration: none;
+            border-radius: var(--border-radius-lg);
+            font-weight: 600;
+            transition: var(--transition);
+            position: relative;
+            overflow: hidden;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .btn-hero::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 0;
+            height: 0;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.3);
+            transform: translate(-50%, -50%);
+            transition: width 0.6s, height 0.6s;
+        }
+
+        .btn-hero:hover::before {
+            width: 300px;
+            height: 300px;
+        }
+
+        .btn-hero.primary {
+            background: white;
+            color: var(--primary);
+            box-shadow: var(--shadow-lg);
+        }
+
+        .btn-hero.primary:hover {
+            transform: translateY(-3px);
+            box-shadow: var(--shadow-xl);
+        }
+
+        .btn-hero.secondary {
+            background: transparent;
+            color: white;
+            border: 2px solid white;
+            backdrop-filter: var(--blur-md);
+        }
+
+        .btn-hero.secondary:hover {
+            background: rgba(255, 255, 255, 0.2);
+            border-color: white;
+            transform: translateY(-3px);
+            box-shadow: var(--shadow-lg);
+        }
+
+        .video-container {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            z-index: 1;
+        }
+
+        .video-container video {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            opacity: 0.3;
+            filter: blur(4px);
+        }
+
+        .section {
+            padding: var(--spacing-2xl) var(--spacing-lg);
+            background: linear-gradient(180deg, var(--bg-light) 0%, var(--bg-lighter) 100%);
+            animation: slideInUp 0.6s ease;
+        }
+
+        .section-title {
+            text-align: center;
+            margin-bottom: var(--spacing-xl);
+            animation: slideInDown 0.6s ease;
+        }
+
+        .section-title h2 {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: var(--spacing-md);
+            font-size: var(--font-size-3xl);
+            font-weight: 800;
+        }
+
+        .section-title p {
+            color: var(--text-secondary);
+            font-size: var(--font-size-lg);
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        .info-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: var(--spacing-xl);
+            margin-bottom: var(--spacing-2xl);
+        }
+
+        .info-card {
+            background: rgba(255, 255, 255, 0.8);
+            backdrop-filter: var(--blur-md);
+            padding: var(--spacing-xl);
+            border-radius: var(--border-radius-lg);
+            border: 1px solid rgba(255, 255, 255, 0.6);
+            text-align: center;
+            box-shadow: var(--shadow-md);
+            transition: var(--transition);
+            position: relative;
+            overflow: hidden;
+            animation: slideInUp 0.6s ease both;
+        }
+
+        .info-card:nth-child(1) { animation-delay: 0.1s; }
+        .info-card:nth-child(2) { animation-delay: 0.2s; }
+        .info-card:nth-child(3) { animation-delay: 0.3s; }
+
+        .info-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(135deg, rgba(79, 70, 229, 0.05) 0%, transparent 100%);
+            pointer-events: none;
+        }
+
+        .info-card:hover {
+            transform: translateY(-12px);
+            box-shadow: var(--shadow-lg);
+            border-color: rgba(79, 70, 229, 0.3);
+            background: rgba(255, 255, 255, 0.95);
+        }
+
+        .info-card-icon {
+            width: 70px;
+            height: 70px;
+            background: linear-gradient(135deg, var(--secondary) 0%, var(--secondary-light) 100%);
+            border-radius: var(--border-radius-lg);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 36px;
+            margin: 0 auto var(--spacing-lg);
+            box-shadow: var(--shadow-md);
+            transition: var(--transition-fast);
+            position: relative;
+            z-index: 1;
+        }
+
+        .info-card:hover .info-card-icon {
+            transform: scale(1.1) rotate(5deg);
+        }
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto var(--spacing-md);
+            color: white;
+            font-size: 28px;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: var(--spacing-lg);
+        }
+
+        .stat-card {
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            color: white;
+            padding: var(--spacing-xl);
+            border-radius: var(--border-radius-lg);
+            text-align: center;
+            box-shadow: var(--shadow-lg);
+        }
+
+        .stat-number {
+            font-size: clamp(28px, 6vw, 48px);
+            font-weight: 800;
+            margin-bottom: var(--spacing-md);
+        }
+
+        .stat-label {
+            font-size: var(--font-size-base);
+            opacity: 0.95;
+        }
+
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: var(--spacing-lg);
+        }
+
+        .feature-item {
+            display: flex;
+            gap: var(--spacing-lg);
+            padding: var(--spacing-lg);
+        }
+
+        .feature-icon {
+            flex-shrink: 0;
+            width: 48px;
+            height: 48px;
+            background: rgba(79, 70, 229, 0.15);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--secondary);
+            font-size: 24px;
+        }
+
+        .feature-content h4 {
+            color: var(--primary);
+            margin-bottom: var(--spacing-sm);
+        }
+
+        .feature-content p {
+            margin: 0;
+            font-size: var(--font-size-sm);
+        }
+
+        .about-section {
+            background: var(--bg-gray);
+        }
+
+        .about-content {
+            max-width: 900px;
+            margin: 0 auto;
+        }
+
+        .about-content h3 {
+            color: var(--primary);
+            margin-bottom: var(--spacing-md);
+        }
+
+        .footer {
+            background: var(--primary);
+            color: white;
+            padding: var(--spacing-xl) var(--spacing-lg);
+            text-align: center;
+        }
+
+        .footer p {
+            color: rgba(255, 255, 255, 0.8);
+            margin: 0;
+        }
+
+        .navbar-landing {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 10;
+            background: transparent;
+            backdrop-filter: none;
+            box-shadow: none;
+        }
+
+        /* Glassmorphism Placement Highlights */
+        .placement-highlights {
+            background: linear-gradient(135deg, rgba(30, 58, 138, 0.1) 0%, rgba(79, 70, 229, 0.1) 100%);
+            backdrop-filter: blur(10px);
+            padding: var(--spacing-2xl) var(--spacing-lg);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .placement-highlights::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            right: -10%;
+            width: 500px;
+            height: 500px;
+            background: radial-gradient(circle, rgba(79, 70, 229, 0.15) 0%, transparent 70%);
+            border-radius: 50%;
+            pointer-events: none;
+            animation: float 8s ease-in-out infinite;
+        }
+
+        .placement-highlights::after {
+            content: '';
+            position: absolute;
+            bottom: -30%;
+            left: -5%;
+            width: 400px;
+            height: 400px;
+            background: radial-gradient(circle, rgba(30, 58, 138, 0.1) 0%, transparent 70%);
+            border-radius: 50%;
+            pointer-events: none;
+            animation: float 10s ease-in-out infinite reverse;
+        }
+
+        .placement-highlights-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            position: relative;
+            z-index: 2;
+        }
+
+        .highlights-title {
+            text-align: center;
+            margin-bottom: var(--spacing-2xl);
+            animation: slideInDown 0.6s ease;
+        }
+
+        .highlights-title h2 {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            font-size: clamp(28px, 6vw, 42px);
+            margin-bottom: var(--spacing-md);
+            font-weight: 800;
+        }
+
+        .highlights-title p {
+            color: var(--text-secondary);
+            font-size: var(--font-size-lg);
+            max-width: 500px;
+            margin: 0 auto;
+        }
+
+        .glass-cards-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: var(--spacing-lg);
+            margin-bottom: var(--spacing-xl);
+        }
+
+        .glass-card {
+            background: rgba(255, 255, 255, 0.7);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.8);
+            border-radius: var(--border-radius-xl);
+            padding: var(--spacing-xl);
+            text-align: center;
+            box-shadow: 0 8px 32px rgba(31, 38, 135, 0.15);
+            transition: var(--transition);
+            position: relative;
+            overflow: hidden;
+            animation: slideInUp 0.6s ease both;
+        }
+
+        .glass-card:nth-child(1) { animation-delay: 0.1s; }
+        .glass-card:nth-child(2) { animation-delay: 0.2s; }
+        .glass-card:nth-child(3) { animation-delay: 0.3s; }
+        .glass-card:nth-child(4) { animation-delay: 0.4s; }
+
+        .glass-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(135deg, rgba(79, 70, 229, 0.05) 0%, transparent 100%);
+            pointer-events: none;
+        }
+
+        .glass-card::after {
+            content: '';
+            position: absolute;
+            top: -50%;
+            right: -50%;
+            width: 200px;
+            height: 200px;
+            background: radial-gradient(circle, rgba(255, 255, 255, 0.3) 0%, transparent 70%);
+            border-radius: 50%;
+            transition: all 0.5s ease;
+            opacity: 0;
+        }
+
+        .glass-card:hover {
+            transform: translateY(-12px);
+            box-shadow: 0 16px 48px rgba(31, 38, 135, 0.25);
+            border-color: rgba(255, 255, 255, 1);
+            background: rgba(255, 255, 255, 0.85);
+        }
+
+        .glass-card:hover::after {
+            opacity: 1;
+            top: -20%;
+            right: -20%;
+        }
+
+        .card-icon {
+            font-size: 48px;
+            margin-bottom: var(--spacing-md);
+            display: block;
+            animation: bounceIn 0.8s ease;
+            position: relative;
+            z-index: 1;
+        }
+
+        @keyframes bounceIn {
+            0% { transform: scale(0.3); opacity: 0; }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); opacity: 1; }
+        }
+
+        .card-value {
+            font-size: clamp(32px, 8vw, 48px);
+            font-weight: 800;
+            background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: var(--spacing-xs);
+            position: relative;
+            z-index: 1;
+            min-height: 50px;
+        }
+
+        .card-label {
+            color: var(--text-secondary);
+            font-size: var(--font-size-sm);
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            position: relative;
+            z-index: 1;
+        }
+
+        .card-subtitle {
+            color: var(--text-muted);
+            font-size: var(--font-size-xs);
+            margin-top: var(--spacing-xs);
+            position: relative;
+            z-index: 1;
+        }
+
+        @media (max-width: 768px) {
+            .hero h1 {
+                font-size: 28px;
+            }
+
+            .hero p {
+                font-size: 16px;
+            }
+
+            .hero-buttons {
+                gap: var(--spacing-sm);
+            }
+
+            .btn-hero {
+                padding: var(--spacing-sm) var(--spacing-lg);
+                font-size: var(--font-size-base);
+            }
+
+            .section {
+                padding: var(--spacing-xl) var(--spacing-md);
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Navigation Bar -->
+    <nav class="navbar navbar-landing">
+        <div class="navbar-container">
+            <a href="index.html" class="navbar-brand">
+                <svg width="32" height="32" viewBox="0 0 32 32" fill="none">
+                    <rect width="32" height="32" rx="8" fill="white"/>
+                    <text x="50%" y="50%" text-anchor="middle" dy="0.3em" font-size="12" font-weight="bold" fill="#1E3A8A">CN</text>
+                </svg>
+                <span>Campus Nexus</span>
+            </a>
+            <div class="navbar-end">
+                <a href="login.html" class="btn btn-outline" style="border-color: white; color: white;">Student Login</a>
+                <a href="login.html?role=admin" class="btn btn-secondary">Admin Login</a>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Hero Section with Video -->
+    <section class="hero">
+        <div class="video-container">
+            <video autoplay muted loop>
+                <source src="assets/images/Cinematic_College_Placement_Video_Generation.mp4" type="video/mp4">
+            </video>
+        </div>
+        <div class="hero-content">
+            <h1>Connect. Apply. Succeed.</h1>
+            <p>Your path to a successful career starts here. Access top placement opportunities from leading companies.</p>
+            <div class="hero-buttons">
+                <a href="login.html" class="btn btn-hero primary">Student Login</a>
+                <a href="#about" class="btn btn-hero secondary">Learn More</a>
+            </div>
+        </div>
+    </section>
+
+    <!-- College Information Section -->
+    <section id="about" class="section about-section">
+        <div class="container">
+            <div class="about-content">
+                <h2>About Our Placement Cell</h2>
+                <p style="margin-bottom: var(--spacing-md);">Our placement cell is dedicated to bridging the gap between talented students and leading organizations. With a strong network of recruiters and a commitment to student success, we have built a proven track record of facilitating meaningful career opportunities.</p>
+                <p style="margin-bottom: var(--spacing-lg);">We focus on holistic development, preparing students not just academically but also for professional challenges ahead. Our mission is to empower every student with the skills and confidence needed to excel in their careers.</p>
+                
+                <div class="grid grid-2" style="margin-top: var(--spacing-xl);">
+                    <div>
+                        <h4 style="color: var(--primary);">Our Mission</h4>
+                        <p>To provide equal opportunities for all students and facilitate placements that align with their skills, interests, and aspirations.</p>
+                    </div>
+                    <div>
+                        <h4 style="color: var(--primary);">Our Vision</h4>
+                        <p>To be a leading placement hub that creates synergy between talented graduates and forward-thinking organizations for mutual growth.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Glassmorphism Placement Highlights -->
+    <section class="placement-highlights">
+        <div class="placement-highlights-container">
+            <div class="highlights-title">
+                <h2>Placement Excellence</h2>
+                <p>Real outcomes from our placement initiatives, powered by session data</p>
+            </div>
+            <div class="glass-cards-grid">
+                <div class="glass-card">
+                    <span class="card-icon">👥</span>
+                    <div class="card-value" id="students-placed">2,450+</div>
+                    <div class="card-label">Students Placed</div>
+                    <div class="card-subtitle">This Semester</div>
+                </div>
+
+                <div class="glass-card">
+                    <span class="card-icon">💼</span>
+                    <div class="card-value" id="active-jobs">42+</div>
+                    <div class="card-label">Active Job Openings</div>
+                    <div class="card-subtitle">Verified Companies</div>
+                </div>
+
+                <div class="glass-card">
+                    <span class="card-icon">🏆</span>
+                    <div class="card-value" id="avg-package">18.5 LPA</div>
+                    <div class="card-label">Average Package</div>
+                    <div class="card-subtitle">Per Annum</div>
+                </div>
+
+                <div class="glass-card">
+                    <span class="card-icon">⭐</span>
+                    <div class="card-value" id="highest-package">50+ LPA</div>
+                    <div class="card-label">Highest Package</div>
+                    <div class="card-subtitle">Achieved</div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Features Overview -->
+    <section class="section">
+        <div class="container">
+            <div class="section-title">
+                <h2>Why Choose Us?</h2>
+                <p>Comprehensive tools to boost your placement journey</p>
+            </div>
+            <div class="features-grid">
+                <div class="feature-item">
+                    <div class="feature-icon">📋</div>
+                    <div class="feature-content">
+                        <h4>Complete Profile</h4>
+                        <p>Create a comprehensive profile showcasing your skills, education, and experience to impress recruiters.</p>
+                    </div>
+                </div>
+                <div class="feature-item">
+                    <div class="feature-icon">💼</div>
+                    <div class="feature-content">
+                        <h4>Job Applications</h4>
+                        <p>Apply to exclusive job openings from leading companies with just a few clicks.</p>
+                    </div>
+                </div>
+                <div class="feature-item">
+                    <div class="feature-icon">📄</div>
+                    <div class="feature-content">
+                        <h4>Resume Management</h4>
+                        <p>Upload and manage your resume, cover letter, and other important documents in one place.</p>
+                    </div>
+                </div>
+                <div class="feature-item">
+                    <div class="feature-icon">🎓</div>
+                    <div class="feature-content">
+                        <h4>Certificates</h4>
+                        <p>Showcase your achievements with verified certificates and credentials.</p>
+                    </div>
+                </div>
+                <div class="feature-item">
+                    <div class="feature-icon">📊</div>
+                    <div class="feature-content">
+                        <h4>Application Tracking</h4>
+                        <p>Track your applications in real-time and monitor interview schedules.</p>
+                    </div>
+                </div>
+                <div class="feature-item">
+                    <div class="feature-icon">📥</div>
+                    <div class="feature-content">
+                        <h4>Download Reports</h4>
+                        <p>Generate and download your application reports as PDF for record keeping.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Top Recruiters Section -->
+    <section class="section" style="background: var(--bg-gray);">
+        <div class="container">
+            <div class="section-title">
+                <h2>Our Top Recruiters</h2>
+                <p>Companies that trust our graduates</p>
+            </div>
+            <div class="grid grid-4">
+                <div class="info-card" style="box-shadow: none; background: transparent; border: 2px solid var(--border-color);">
+                    <div style="font-size: 36px; margin-bottom: var(--spacing-md);">🏢</div>
+                    <h4>TCS</h4>
+                    <p style="margin: 0; font-size: var(--font-size-sm);">Tata Consultancy Services</p>
+                </div>
+                <div class="info-card" style="box-shadow: none; background: transparent; border: 2px solid var(--border-color);">
+                    <div style="font-size: 36px; margin-bottom: var(--spacing-md);">🏢</div>
+                    <h4>Infosys</h4>
+                    <p style="margin: 0; font-size: var(--font-size-sm);">Leading IT Services</p>
+                </div>
+                <div class="info-card" style="box-shadow: none; background: transparent; border: 2px solid var(--border-color);">
+                    <div style="font-size: 36px; margin-bottom: var(--spacing-md);">🏢</div>
+                    <h4>Wipro</h4>
+                    <p style="margin: 0; font-size: var(--font-size-sm);">Global IT Solutions</p>
+                </div>
+                <div class="info-card" style="box-shadow: none; background: transparent; border: 2px solid var(--border-color);">
+                    <div style="font-size: 36px; margin-bottom: var(--spacing-md);">🏢</div>
+                    <h4>Accenture</h4>
+                    <p style="margin: 0; font-size: var(--font-size-sm);">Professional Services</p>
+                </div>
+                <div class="info-card" style="box-shadow: none; background: transparent; border: 2px solid var(--border-color);">
+                    <div style="font-size: 36px; margin-bottom: var(--spacing-md);">🏢</div>
+                    <h4>Amazon</h4>
+                    <p style="margin: 0; font-size: var(--font-size-sm);">Global E-commerce</p>
+                </div>
+                <div class="info-card" style="box-shadow: none; background: transparent; border: 2px solid var(--border-color);">
+                    <div style="font-size: 36px; margin-bottom: var(--spacing-md);">🏢</div>
+                    <h4>Google</h4>
+                    <p style="margin: 0; font-size: var(--font-size-sm);">Technology Giant</p>
+                </div>
+                <div class="info-card" style="box-shadow: none; background: transparent; border: 2px solid var(--border-color);">
+                    <div style="font-size: 36px; margin-bottom: var(--spacing-md);">🏢</div>
+                    <h4>Microsoft</h4>
+                    <p style="margin: 0; font-size: var(--font-size-sm);">Software Solutions</p>
+                </div>
+                <div class="info-card" style="box-shadow: none; background: transparent; border: 2px solid var(--border-color);">
+                    <div style="font-size: 36px; margin-bottom: var(--spacing-md);">🏢</div>
+                    <h4>IBM</h4>
+                    <p style="margin: 0; font-size: var(--font-size-sm);">Enterprise IT</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Call to Action -->
+    <section class="section" style="background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%); color: white; text-align: center;">
+        <div class="container">
+            <h2 style="color: white;">Ready to Launch Your Career?</h2>
+            <p style="color: rgba(255, 255, 255, 0.95); margin-bottom: var(--spacing-lg);">Join thousands of successful graduates who found their dream jobs through our platform.</p>
+            <a href="login.html" class="btn btn-primary" style="background: white; color: var(--primary); font-weight: 600;">Get Started Now</a>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <p>&copy; 2026 Campus Nexus Placement Portal. All rights reserved.</p>
+            <p style="margin-top: var(--spacing-md); font-size: var(--font-size-sm);">Supporting the career aspirations of talented graduates.</p>
+        </div>
+    </footer>
+
+    <script src="js/main.js"></script>
+
+    <script>
+        // Glassmorphism Placement Highlights - Animated Number Counter
+        class PlacementHighlights {
+            constructor() {
+                this.stats = {
+                    studentsPlaced: 2450,
+                    activeJobs: 42,
+                    avgPackage: 18.5,
+                    highestPackage: 50
+                };
+                this.animating = false;
+            }
+
+            // Get session-based data and calculate cumulative stats
+            getSessionBasedStats() {
+                const user = SessionManager.getCurrentUser();
+                const isLoggedIn = SessionManager.isLoggedIn();
+
+                let stats = { ...this.stats };
+
+                if (isLoggedIn && user) {
+                    // Get all user data from storage
+                    const allUsersData = StorageHelper.get('userData', {});
+                    
+                    // Calculate cumulative placements
+                    let totalPlacements = 0;
+                    let allPackages = [];
+
+                    Object.keys(allUsersData).forEach(email => {
+                        const data = allUsersData[email];
+                        if (data.applications) {
+                            // Count accepted applications as placements
+                            const placements = data.applications.filter(app => app.status === 'accepted');
+                            totalPlacements += placements.length;
+
+                            // Extract salary data
+                            placements.forEach(p => {
+                                if (p.salary) {
+                                    const salary = parseFloat(p.salary);
+                                    if (salary > 0) {
+                                        allPackages.push(salary);
+                                    }
+                                }
+                            });
+                        }
+                    });
+
+                    // Update stats with calculated values
+                    if (totalPlacements > 0) {
+                        stats.studentsPlaced += totalPlacements;
+                        
+                        if (allPackages.length > 0) {
+                            const avgPackage = allPackages.reduce((a, b) => a + b, 0) / allPackages.length;
+                            stats.avgPackage = avgPackage;
+                            
+                            const maxPackage = Math.max(...allPackages);
+                            if (maxPackage > stats.highestPackage) {
+                                stats.highestPackage = maxPackage;
+                            }
+                        }
+                    }
+
+                    // Get admin stats if admin is logged in
+                    if (user.role === 'admin') {
+                        const adminStats = StorageHelper.get('adminStats', {});
+                        if (adminStats.totalStudents) {
+                            stats.studentsPlaced = adminStats.totalStudents;
+                        }
+                        if (adminStats.activeJobs) {
+                            stats.activeJobs = adminStats.activeJobs;
+                        }
+                    }
+                }
+
+                return stats;
+            }
+
+            // Animate number counting from 0 to target value
+            animateNumber(element, targetValue, suffix = '', duration = 2000) {
+                if (!element) return;
+
+                const startValue = 0;
+                const startTime = Date.now();
+
+                const animate = () => {
+                    const elapsed = Date.now() - startTime;
+                    const progress = Math.min(elapsed / duration, 1);
+
+                    // Easing function for smooth animation
+                    const easeOutQuad = progress => 1 - (1 - progress) * (1 - progress);
+                    const easedProgress = easeOutQuad(progress);
+
+                    let currentValue;
+                    if (typeof targetValue === 'number' && targetValue >= 100) {
+                        // For large numbers, use comma formatting
+                        currentValue = Math.floor(startValue + (targetValue - startValue) * easedProgress).toLocaleString();
+                    } else if (typeof targetValue === 'number') {
+                        // For decimal numbers, show one decimal place
+                        currentValue = (startValue + (targetValue - startValue) * easedProgress).toFixed(1);
+                    } else {
+                        currentValue = targetValue;
+                    }
+
+                    element.textContent = currentValue + suffix;
+
+                    if (progress < 1) {
+                        requestAnimationFrame(animate);
+                    }
+                };
+
+                animate();
+            }
+
+            // Initialize and animate all cards
+            initialize() {
+                const stats = this.getSessionBasedStats();
+
+                // Get DOM elements
+                const elementsConfig = [
+                    { id: 'students-placed', value: stats.studentsPlaced, suffix: '+' },
+                    { id: 'active-jobs', value: stats.activeJobs, suffix: '+' },
+                    { id: 'avg-package', value: stats.avgPackage, suffix: ' LPA' },
+                    { id: 'highest-package', value: stats.highestPackage, suffix: '+ LPA' }
+                ];
+
+                // Animate with staggered timing
+                elementsConfig.forEach((config, index) => {
+                    const element = document.getElementById(config.id);
+                    if (element) {
+                        setTimeout(() => {
+                            this.animateNumber(element, config.value, config.suffix, 2000);
+                        }, index * 150); // Stagger animations
+                    }
+                });
+            }
+
+            // Reinitialize when user logs in (storage event)
+            setupStorageListener() {
+                window.addEventListener('storage', () => {
+                    if (SessionManager.isLoggedIn()) {
+                        // Reset and reinitialize with new session data
+                        const elementsConfig = [
+                            { id: 'students-placed' },
+                            { id: 'active-jobs' },
+                            { id: 'avg-package' },
+                            { id: 'highest-package' }
+                        ];
+
+                        elementsConfig.forEach(config => {
+                            const element = document.getElementById(config.id);
+                            if (element) {
+                                element.textContent = '...';
+                            }
+                        });
+
+                        setTimeout(() => this.initialize(), 300);
+                    }
+                });
+            }
+        }
+
+        // Initialize on page load
+        const placementHighlights = new PlacementHighlights();
+
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', () => {
+                placementHighlights.initialize();
+                placementHighlights.setupStorageListener();
+            });
+        } else {
+            placementHighlights.initialize();
+            placementHighlights.setupStorageListener();
+        }
+
+        // Reinitialize when window regains focus (user returns from login)
+        window.addEventListener('focus', () => {
+            if (SessionManager.isLoggedIn()) {
+                const stats = placementHighlights.getSessionBasedStats();
+                // Check if values have changed
+                const studentElement = document.getElementById('students-placed');
+                if (studentElement && !studentElement.textContent.includes(stats.studentsPlaced.toString())) {
+                    setTimeout(() => placementHighlights.initialize(), 300);
+                }
+            }
+        });
+    </script>

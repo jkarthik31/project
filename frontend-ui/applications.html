@@ -1,0 +1,683 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Applications - Student Placement Portal</title>
+    <link rel="stylesheet" href="css/style.css">
+    <style>
+        .applications-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: var(--spacing-xl);
+            flex-wrap: wrap;
+            gap: var(--spacing-md);
+        }
+
+        .view-toggle {
+            display: flex;
+            gap: var(--spacing-sm);
+            background: var(--bg-gray);
+            padding: var(--spacing-xs);
+            border-radius: var(--border-radius);
+        }
+
+        .view-toggle button {
+            padding: var(--spacing-sm) var(--spacing-md);
+            border: none;
+            background: transparent;
+            cursor: pointer;
+            font-weight: 600;
+            color: var(--text-secondary);
+            transition: var(--transition-fast);
+        }
+
+        .view-toggle button.active {
+            background: white;
+            color: var(--secondary);
+            border-radius: var(--border-radius-sm, 8px);
+            box-shadow: var(--shadow-sm);
+        }
+
+        .status-filters {
+            display: flex;
+            gap: var(--spacing-sm);
+            flex-wrap: wrap;
+        }
+
+        .status-filter-btn {
+            padding: var(--spacing-sm) var(--spacing-md);
+            border: 2px solid var(--border-color);
+            background: white;
+            border-radius: 20px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: var(--font-size-sm);
+            transition: var(--transition-fast);
+        }
+
+        .status-filter-btn:hover,
+        .status-filter-btn.active {
+            border-color: var(--secondary);
+            background: rgba(79, 70, 229, 0.1);
+            color: var(--secondary);
+        }
+
+        /* Table View */
+        .applications-table-wrapper {
+            background: white;
+            border-radius: var(--border-radius-lg);
+            box-shadow: var(--shadow-md);
+            overflow: hidden;
+        }
+
+        .applications-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .applications-table thead {
+            background: var(--bg-gray);
+            border-bottom: 2px solid var(--border-color);
+        }
+
+        .applications-table th {
+            padding: var(--spacing-md);
+            text-align: left;
+            font-weight: 600;
+            color: var(--primary);
+            white-space: nowrap;
+        }
+
+        .applications-table td {
+            padding: var(--spacing-md);
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .applications-table tbody tr:hover {
+            background: var(--bg-gray);
+        }
+
+        .company-info {
+            display: flex;
+            align-items: center;
+            gap: var(--spacing-md);
+        }
+
+        .company-logo {
+            width: 40px;
+            height: 40px;
+            border-radius: var(--border-radius);
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+            flex-shrink: 0;
+        }
+
+        .company-details h4 {
+            margin: 0 0 var(--spacing-xs);
+        }
+
+        .company-details p {
+            margin: 0;
+            font-size: var(--font-size-sm);
+            color: var(--text-muted);
+        }
+
+        .status-badge {
+            padding: var(--spacing-xs) var(--spacing-md);
+            border-radius: 20px;
+            font-size: var(--font-size-xs);
+            font-weight: 600;
+            white-space: nowrap;
+        }
+
+        .status-badge.applied {
+            background: rgba(6, 182, 212, 0.15);
+            color: var(--info);
+        }
+
+        .status-badge.shortlisted {
+            background: rgba(245, 158, 11, 0.15);
+            color: var(--warning);
+        }
+
+        .status-badge.interview {
+            background: rgba(79, 70, 229, 0.15);
+            color: var(--secondary);
+        }
+
+        .status-badge.selected {
+            background: rgba(16, 185, 129, 0.15);
+            color: var(--success);
+        }
+
+        .status-badge.rejected {
+            background: rgba(239, 68, 68, 0.15);
+            color: var(--danger);
+        }
+
+        .action-buttons {
+            display: flex;
+            gap: var(--spacing-sm);
+        }
+
+        .action-buttons button {
+            padding: var(--spacing-xs) var(--spacing-sm);
+            font-size: var(--font-size-xs);
+        }
+
+        /* Card View */
+        .applications-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: var(--spacing-lg);
+        }
+
+        .application-card {
+            background: white;
+            border-radius: var(--border-radius-lg);
+            padding: var(--spacing-lg);
+            box-shadow: var(--shadow-md);
+            transition: var(--transition);
+            border-left: 4px solid;
+        }
+
+        .application-card:hover {
+            box-shadow: var(--shadow-lg);
+            transform: translateY(-4px);
+        }
+
+        .application-card.applied {
+            border-left-color: var(--info);
+        }
+
+        .application-card.shortlisted {
+            border-left-color: var(--warning);
+        }
+
+        .application-card.interview {
+            border-left-color: var(--secondary);
+        }
+
+        .application-card.selected {
+            border-left-color: var(--success);
+        }
+
+        .application-card.rejected {
+            border-left-color: var(--danger);
+        }
+
+        .application-card-header {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            gap: var(--spacing-md);
+            margin-bottom: var(--spacing-md);
+            padding-bottom: var(--spacing-md);
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .application-card-company {
+            flex: 1;
+        }
+
+        .application-card-company h3 {
+            margin: 0 0 var(--spacing-xs);
+        }
+
+        .application-card-company p {
+            margin: 0;
+            color: var(--text-secondary);
+            font-size: var(--font-size-sm);
+        }
+
+        .application-timeline {
+            margin: var(--spacing-lg) 0;
+            padding: var(--spacing-lg) 0;
+            border-top: 1px solid var(--border-color);
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .timeline-step {
+            display: flex;
+            align-items: flex-start;
+            gap: var(--spacing-md);
+            margin-bottom: var(--spacing-md);
+        }
+
+        .timeline-step:last-child {
+            margin-bottom: 0;
+        }
+
+        .timeline-dot {
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            background: var(--border-color);
+            border: 2px solid white;
+            flex-shrink: 0;
+            margin-top: 3px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+        }
+
+        .timeline-dot.completed {
+            background: var(--success);
+            color: white;
+        }
+
+        .timeline-dot.current {
+            background: var(--secondary);
+            color: white;
+            box-shadow: 0 0 0 4px rgba(79, 70, 229, 0.2);
+        }
+
+        .timeline-dot.pending {
+            background: var(--border-color);
+            color: var(--text-muted);
+        }
+
+        .timeline-content h5 {
+            margin: 0 0 var(--spacing-xs);
+            color: var(--text-primary);
+        }
+
+        .timeline-content p {
+            margin: 0;
+            color: var(--text-secondary);
+            font-size: var(--font-size-sm);
+        }
+
+        .application-card-footer {
+            display: flex;
+            gap: var(--spacing-sm);
+            margin-top: var(--spacing-lg);
+        }
+
+        .application-card-footer button {
+            flex: 1;
+        }
+
+        .deadline-badge {
+            display: inline-block;
+            padding: var(--spacing-xs) var(--spacing-sm);
+            background: rgba(239, 68, 68, 0.1);
+            color: var(--danger);
+            border-radius: var(--border-radius);
+            font-size: var(--font-size-xs);
+            font-weight: 600;
+        }
+
+        .deadline-badge.upcoming {
+            background: rgba(245, 158, 11, 0.1);
+            color: var(--warning);
+        }
+
+        .deadline-badge.safe {
+            background: rgba(16, 185, 129, 0.1);
+            color: var(--success);
+        }
+
+        .no-applications {
+            text-align: center;
+            padding: var(--spacing-2xl);
+            background: white;
+            border-radius: var(--border-radius-lg);
+            color: var(--text-secondary);
+        }
+
+        .no-applications-icon {
+            font-size: 64px;
+            margin-bottom: var(--spacing-md);
+        }
+
+        @media (max-width: 768px) {
+            .applications-header {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+
+            .view-toggle {
+                width: 100%;
+            }
+
+            .applications-table {
+                font-size: var(--font-size-sm);
+            }
+
+            .applications-table th,
+            .applications-table td {
+                padding: var(--spacing-sm);
+            }
+
+            .applications-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .action-buttons {
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Navigation Bar -->
+    <nav class="navbar">
+        <div class="navbar-container">
+            <a href="dashboard.html" class="navbar-brand">
+                <svg width="32" height="32" viewBox="0 0 32 32" fill="none">
+                    <rect width="32" height="32" rx="8" fill="#1E3A8A"/>
+                    <text x="50%" y="50%" text-anchor="middle" dy="0.3em" font-size="18" font-weight="bold" fill="white">S</text>
+                </svg>
+                <span>Campus Nexus</span>
+            </a>
+            <div class="navbar-menu">
+                <a href="dashboard.html">Dashboard</a>
+                <a href="jobs.html">Browse Jobs</a>
+                <a href="profile.html">Profile</a>
+                <a href="applications.html" class="active">Applications</a>
+            </div>
+            <div class="navbar-end">
+                <div style="display: flex; align-items: center; gap: var(--spacing-md);">
+                    <a href="profile.html" id="user-initials" style="width: 36px; height: 36px; border-radius: 50%; background: linear-gradient(135deg, var(--primary), var(--secondary)); display: flex; align-items: center; justify-content: center; color: white; font-weight: bold; text-decoration: none;">JD</a>
+                    <button style="background: none; border: none; cursor: pointer; color: var(--text-secondary); font-weight: 600;" onclick="logout()">Logout</button>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <div class="main-content" style="background: var(--bg-light);">
+        <div class="container">
+            <!-- Header -->
+            <h1 style="margin-bottom: var(--spacing-xl);">My Applications</h1>
+
+            <!-- Controls -->
+            <div class="applications-header">
+                <div class="view-toggle">
+                    <button class="active" data-view="table" onclick="switchView('table', this)">📊 Table</button>
+                    <button data-view="cards" onclick="switchView('cards', this)">📇 Cards</button>
+                </div>
+                <div class="status-filters">
+                    <button class="status-filter-btn active" data-status="all" onclick="filterByStatus('all', this)">All</button>
+                    <button class="status-filter-btn" data-status="applied" onclick="filterByStatus('applied', this)">Applied</button>
+                    <button class="status-filter-btn" data-status="shortlisted" onclick="filterByStatus('shortlisted', this)">Shortlisted</button>
+                    <button class="status-filter-btn" data-status="interview" onclick="filterByStatus('interview', this)">Interview</button>
+                    <button class="status-filter-btn" data-status="selected" onclick="filterByStatus('selected', this)">Selected</button>
+                    <button class="status-filter-btn" data-status="rejected" onclick="filterByStatus('rejected', this)">Rejected</button>
+                </div>
+            </div>
+
+            <!-- Table View -->
+            <div id="tableView" class="applications-table-wrapper" style="margin-bottom: var(--spacing-xl);">
+                <table class="applications-table">
+                    <thead>
+                        <tr>
+                            <th>Company & Role</th>
+                            <th>Applied Date</th>
+                            <th>Status</th>
+                            <th>Deadline</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="applicationsTbody">
+                        <!-- Dynamic application rows will be injected here -->
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Card View (dynamic) -->
+            <div id="cardView" class="applications-grid" style="display: none;">
+                <div id="applicationsGrid"></div>
+            </div>
+        </div>
+    </div>
+
+    <script src="js/main.js"></script>
+    <script>
+        // Check if user is logged in
+        if (!SessionManager.isLoggedIn()) {
+            window.location.href = 'login.html';
+        }
+
+        let currentView = 'table';
+        let currentFilter = 'all';
+
+        function switchView(view, btn) {
+            currentView = view;
+            const tableView = document.getElementById('tableView');
+            const cardView = document.getElementById('cardView');
+            document.querySelectorAll('.view-toggle button').forEach(b => b.classList.remove('active'));
+            if (btn) btn.classList.add('active');
+
+            if (view === 'table') {
+                tableView.style.display = 'block';
+                cardView.style.display = 'none';
+            } else {
+                tableView.style.display = 'none';
+                cardView.style.display = 'grid';
+            }
+            renderApplications();
+        }
+
+        function filterByStatus(status, btn) {
+            currentFilter = status;
+            document.querySelectorAll('.status-filter-btn').forEach(b => b.classList.remove('active'));
+            if (btn) btn.classList.add('active');
+            renderApplications();
+            Toast.info(`Filtered by ${status === 'all' ? 'All' : status}`);
+        }
+
+        function viewApplicationPDF(company, position) {
+            Toast.info(`Generating PDF for ${company} - ${position}...`);
+            setTimeout(() => {
+                Toast.success(`${company} application PDF ready for download!`);
+            }, 1000);
+        }
+
+        function withdrawApplication(company, position) {
+            const currentUser = SessionManager.getCurrentUser();
+            if (!currentUser) return;
+            if (confirm(`Are you sure you want to withdraw your application from ${company}?`)) {
+                const removed = UserDataManager.removeApplication(currentUser.email, company, position);
+                if (removed) {
+                    Toast.success(`Application withdrawn from ${company}`);
+                    renderApplications();
+                } else {
+                    Toast.error('Unable to withdraw application.');
+                }
+            }
+        }
+
+        function scheduleInterview(company, position) {
+            const currentUser = SessionManager.getCurrentUser();
+            if (!currentUser) return;
+            Toast.info(`Scheduling interview for ${company}...`);
+            setTimeout(() => {
+                const ok = UserDataManager.updateApplicationStatus(currentUser.email, company, position, 'interview');
+                if (ok) {
+                    Toast.success('Interview scheduled.');
+                    renderApplications();
+                } else {
+                    Toast.error('Unable to schedule interview.');
+                }
+            }, 800);
+        }
+
+        function viewInterviewDetails(company, position) {
+            Toast.info(`Loading interview details for ${company}...`);
+        }
+
+        function viewOffer(company, position) {
+            Toast.success(`Opening offer letter from ${company}...`);
+        }
+
+        // Render applications into table and cards
+        function renderApplications() {
+            const currentUser = SessionManager.getCurrentUser();
+            if (!currentUser) return;
+            const applications = UserDataManager.getApplications(currentUser.email) || [];
+
+            // Update status filter counts
+            const counts = applications.reduce((acc, a) => {
+                acc[a.status] = (acc[a.status] || 0) + 1; return acc;
+            }, {});
+            const allCount = applications.length;
+            document.querySelectorAll('.status-filter-btn').forEach(btn => {
+                const s = btn.dataset.status;
+                if (s === 'all') btn.textContent = `All (${allCount})`;
+                else btn.textContent = `${s.charAt(0).toUpperCase() + s.slice(1)} (${counts[s] || 0})`;
+            });
+
+            // Filter apps
+            const filtered = currentFilter === 'all' ? applications : applications.filter(a => a.status === currentFilter);
+
+            // Table
+            const tbody = document.getElementById('applicationsTbody');
+            tbody.innerHTML = '';
+            filtered.forEach(app => {
+                const tr = document.createElement('tr');
+                tr.className = `application-row ${app.status}`;
+
+                const companyTd = document.createElement('td');
+                companyTd.innerHTML = `
+                    <div class="company-info">
+                        <div class="company-logo">${(app.company||'')[0] || ''}</div>
+                        <div class="company-details">
+                            <h4>${app.position}</h4>
+                            <p>${app.company}</p>
+                        </div>
+                    </div>`;
+
+                const dateTd = document.createElement('td');
+                dateTd.textContent = (app.appliedDate) ? new Date(app.appliedDate).toLocaleDateString() : '-';
+
+                const statusTd = document.createElement('td');
+                statusTd.innerHTML = `<span class="status-badge ${app.status}">${app.status.charAt(0).toUpperCase() + app.status.slice(1)}</span>`;
+
+                const deadlineTd = document.createElement('td');
+                if (app.status === 'interview') deadlineTd.textContent = `Interview scheduled`;
+                else if (app.status === 'selected') deadlineTd.textContent = `Offer received`;
+                else deadlineTd.textContent = app.appliedDate || '-';
+
+                const actionsTd = document.createElement('td');
+                const actionDiv = document.createElement('div');
+                actionDiv.className = 'action-buttons';
+
+                // Add action buttons based on status
+                const pdfBtn = document.createElement('button');
+                pdfBtn.className = 'btn btn-sm btn-ghost';
+                pdfBtn.textContent = '📥 PDF';
+                pdfBtn.addEventListener('click', () => viewApplicationPDF(app.company, app.position));
+                actionDiv.appendChild(pdfBtn);
+
+                if (app.status === 'applied') {
+                    const withdrawBtn = document.createElement('button');
+                    withdrawBtn.className = 'btn btn-sm btn-danger';
+                    withdrawBtn.textContent = 'Withdraw';
+                    withdrawBtn.addEventListener('click', () => withdrawApplication(app.company, app.position));
+                    actionDiv.appendChild(withdrawBtn);
+                } else if (app.status === 'shortlisted') {
+                    const scheduleBtn = document.createElement('button');
+                    scheduleBtn.className = 'btn btn-sm btn-secondary';
+                    scheduleBtn.textContent = 'Schedule';
+                    scheduleBtn.addEventListener('click', () => scheduleInterview(app.company, app.position));
+                    actionDiv.appendChild(scheduleBtn);
+                } else if (app.status === 'interview') {
+                    const detailsBtn = document.createElement('button');
+                    detailsBtn.className = 'btn btn-sm btn-info';
+                    detailsBtn.textContent = 'Details';
+                    detailsBtn.addEventListener('click', () => viewInterviewDetails(app.company, app.position));
+                    actionDiv.appendChild(detailsBtn);
+                } else if (app.status === 'selected') {
+                    const offerBtn = document.createElement('button');
+                    offerBtn.className = 'btn btn-sm btn-success';
+                    offerBtn.textContent = 'View Offer';
+                    offerBtn.addEventListener('click', () => viewOffer(app.company, app.position));
+                    actionDiv.appendChild(offerBtn);
+                }
+
+                actionsTd.appendChild(actionDiv);
+
+                tr.appendChild(companyTd);
+                tr.appendChild(dateTd);
+                tr.appendChild(statusTd);
+                tr.appendChild(deadlineTd);
+                tr.appendChild(actionsTd);
+                tbody.appendChild(tr);
+            });
+
+            // Cards
+            const grid = document.getElementById('applicationsGrid');
+            grid.innerHTML = '';
+            filtered.forEach(app => {
+                const card = document.createElement('div');
+                card.className = `application-card ${app.status}`;
+                card.innerHTML = `
+                    <div class="application-card-header">
+                        <div class="application-card-company">
+                            <h3>${app.position}</h3>
+                            <p>${app.company}</p>
+                        </div>
+                        <span class="status-badge ${app.status}">${app.status.charAt(0).toUpperCase() + app.status.slice(1)}</span>
+                    </div>
+                    <div class="application-timeline">
+                        <div class="timeline-step">
+                            <div class="timeline-dot completed">✓</div>
+                            <div class="timeline-content">
+                                <h5>Applied</h5>
+                                <p>${app.appliedDate || '-'}</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div style="margin-top:8px;">
+                        <span class="deadline-badge">${app.appliedDate || '-'}</span>
+                    </div>
+                `;
+
+                const footer = document.createElement('div');
+                footer.className = 'application-card-footer';
+
+                const pdfB = document.createElement('button'); pdfB.className = 'btn btn-sm btn-ghost'; pdfB.textContent = '📥 PDF'; pdfB.addEventListener('click', () => viewApplicationPDF(app.company, app.position));
+                footer.appendChild(pdfB);
+
+                if (app.status === 'applied') {
+                    const w = document.createElement('button'); w.className = 'btn btn-sm btn-danger'; w.textContent = 'Withdraw'; w.addEventListener('click', () => withdrawApplication(app.company, app.position)); footer.appendChild(w);
+                } else if (app.status === 'shortlisted') {
+                    const s = document.createElement('button'); s.className = 'btn btn-sm btn-secondary'; s.textContent = 'Schedule'; s.addEventListener('click', () => scheduleInterview(app.company, app.position)); footer.appendChild(s);
+                } else if (app.status === 'interview') {
+                    const d = document.createElement('button'); d.className = 'btn btn-sm btn-info'; d.textContent = 'Details'; d.addEventListener('click', () => viewInterviewDetails(app.company, app.position)); footer.appendChild(d);
+                } else if (app.status === 'selected') {
+                    const o = document.createElement('button'); o.className = 'btn btn-sm btn-success'; o.textContent = 'View Offer'; o.addEventListener('click', () => viewOffer(app.company, app.position)); footer.appendChild(o);
+                }
+
+                card.appendChild(footer);
+                grid.appendChild(card);
+            });
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            SidebarNav.init();
+            renderApplications();
+        });
+
+        // Logout function
+        function logout() {
+            if (confirm('Are you sure you want to logout?')) {
+                SessionManager.logout();
+                Toast.info('Logged out successfully');
+                setTimeout(() => {
+                    window.location.href = 'index.html';
+                }, 500);
+            }
+        }
+    </script>
+</body>
+</html>

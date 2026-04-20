@@ -1,0 +1,702 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard - Student Placement Portal</title>
+    <link rel="stylesheet" href="css/style.css">
+    <style>
+        .dashboard-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: var(--spacing-xl);
+            padding-bottom: var(--spacing-xl);
+            border-bottom: 2px solid rgba(0, 0, 0, 0.05);
+        }
+
+        .dashboard-header h1 {
+            margin: 0;
+            background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            font-size: var(--font-size-3xl);
+        }
+
+        .dashboard-widgets {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: var(--spacing-lg);
+            margin-bottom: var(--spacing-xl);
+            animation: fadeIn 0.6s ease;
+        }
+
+        .widget {
+            background: rgba(255, 255, 255, 0.8);
+            backdrop-filter: var(--blur-md);
+            padding: var(--spacing-lg);
+            border-radius: var(--border-radius-lg);
+            border: 1px solid rgba(255, 255, 255, 0.6);
+            box-shadow: var(--shadow-md);
+            transition: var(--transition);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .widget::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(135deg, rgba(79, 70, 229, 0.03) 0%, transparent 100%);
+            pointer-events: none;
+        }
+
+        .widget:hover {
+            transform: translateY(-8px);
+            box-shadow: var(--shadow-lg);
+            border-color: rgba(79, 70, 229, 0.2);
+            background: rgba(255, 255, 255, 0.95);
+        }
+
+        .widget-title {
+            font-size: var(--font-size-sm);
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.7px;
+            margin-bottom: var(--spacing-sm);
+            font-weight: 600;
+            position: relative;
+            z-index: 1;
+        }
+
+        .widget-value {
+            font-size: var(--font-size-3xl);
+            font-weight: 700;
+            background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: var(--spacing-xs);
+            position: relative;
+            z-index: 1;
+        }
+
+        .widget-subtitle {
+            font-size: var(--font-size-sm);
+            color: var(--text-secondary);
+            position: relative;
+            z-index: 1;
+        }
+
+        .widget-icon {
+            position: absolute;
+            top: var(--spacing-lg);
+            right: var(--spacing-lg);
+            font-size: 32px;
+            opacity: 0.1;
+        }
+
+        .widget {
+            position: relative;
+            overflow: hidden;
+        }
+
+        .profile-completion-section {
+            background: rgba(255, 255, 255, 0.8);
+            backdrop-filter: var(--blur-md);
+            padding: var(--spacing-lg);
+            border-radius: var(--border-radius-lg);
+            box-shadow: var(--shadow-md);
+            border: 1px solid rgba(255, 255, 255, 0.6);
+            margin-bottom: var(--spacing-xl);
+            transition: var(--transition);
+        }
+
+        .profile-completion-section:hover {
+            box-shadow: var(--shadow-lg);
+            border-color: rgba(79, 70, 229, 0.2);
+        }
+
+        .profile-completion-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: var(--spacing-lg);
+        }
+
+        .profile-completion-header h3 {
+            margin: 0;
+            background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .completion-percentage {
+            font-size: var(--font-size-lg);
+            font-weight: 700;
+            background: linear-gradient(135deg, var(--secondary) 0%, var(--secondary-light) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .profile-items {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: var(--spacing-md);
+        }
+
+        .profile-item {
+            display: flex;
+            align-items: center;
+            gap: var(--spacing-md);
+            padding: var(--spacing-md);
+            background: linear-gradient(135deg, rgba(79, 70, 229, 0.05) 0%, rgba(79, 70, 229, 0.02) 100%);
+            border: 1px solid rgba(79, 70, 229, 0.1);
+            border-radius: var(--border-radius);
+            transition: var(--transition-fast);
+        }
+
+        .profile-item:hover {
+            background: rgba(79, 70, 229, 0.1);
+            transform: translateY(-4px);
+            border-color: rgba(79, 70, 229, 0.3);
+        }
+
+        .profile-item-check {
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+            font-weight: bold;
+            flex-shrink: 0;
+            transition: var(--transition-fast);
+        }
+
+        .profile-item-check.complete {
+            background: linear-gradient(135deg, var(--success) 0%, var(--success-light) 100%);
+            color: white;
+            box-shadow: var(--shadow-md);
+        }
+
+        .profile-item-check.incomplete {
+            background: var(--border-color);
+            color: var(--text-muted);
+            border: 2px solid rgba(79, 70, 229, 0.2);
+        }
+
+        .profile-item-content {
+            flex: 1;
+        }
+
+        .profile-item-label {
+            font-weight: 600;
+            font-size: var(--font-size-sm);
+            margin-bottom: var(--spacing-xs);
+            color: var(--text-primary);
+        }
+
+        .profile-item-progress {
+            font-size: var(--font-size-xs);
+            color: var(--text-muted);
+        }
+
+        .applications-section {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: var(--spacing-lg);
+            margin-bottom: var(--spacing-xl);
+        }
+
+        .application-card {
+            background: rgba(255, 255, 255, 0.8);
+            backdrop-filter: var(--blur-md);
+            border-radius: var(--border-radius-lg);
+            padding: var(--spacing-lg);
+            box-shadow: var(--shadow-md);
+            border-left: 4px solid;
+            border-top: 1px solid rgba(255, 255, 255, 0.6);
+            border-right: 1px solid rgba(255, 255, 255, 0.6);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.6);
+            transition: var(--transition);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .application-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(135deg, rgba(79, 70, 229, 0.05) 0%, transparent 100%);
+            pointer-events: none;
+        }
+
+        .application-card:hover {
+            transform: translateY(-8px) scale(1.02);
+            box-shadow: var(--shadow-lg);
+            background: rgba(255, 255, 255, 0.95);
+        }
+
+        .application-card.applied {
+            border-left-color: var(--info);
+        }
+
+        .application-card.applied:hover {
+            border-left-color: var(--info-light);
+        }
+
+        .application-card.shortlisted {
+            border-left-color: var(--warning);
+        }
+
+        .application-card.shortlisted:hover {
+            border-left-color: var(--warning-light);
+        }
+
+        .application-card.selected {
+            border-left-color: var(--success);
+        }
+
+        .application-card.selected:hover {
+            border-left-color: var(--success-light);
+        }
+
+        .application-card.rejected {
+            border-left-color: var(--danger);
+        }
+
+        .application-card.rejected:hover {
+            border-left-color: var(--danger-light);
+        }
+
+        .application-status {
+            display: inline-block;
+            padding: var(--spacing-xs) var(--spacing-md);
+            border-radius: 20px;
+            font-size: var(--font-size-xs);
+            font-weight: 600;
+            margin-bottom: var(--spacing-md);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            backdrop-filter: var(--blur-sm);
+        }
+
+        .application-status.applied {
+            background: linear-gradient(135deg, rgba(6, 182, 212, 0.15) 0%, rgba(6, 182, 212, 0.05) 100%);
+            color: var(--info);
+            border: 1px solid rgba(6, 182, 212, 0.3);
+        }
+
+        .application-status.shortlisted {
+            background: linear-gradient(135deg, rgba(245, 158, 11, 0.15) 0%, rgba(245, 158, 11, 0.05) 100%);
+            color: var(--warning);
+            border: 1px solid rgba(245, 158, 11, 0.3);
+        }
+
+        .application-status.selected {
+            background: linear-gradient(135deg, rgba(16, 185, 129, 0.15) 0%, rgba(16, 185, 129, 0.05) 100%);
+            color: var(--success);
+            border: 1px solid rgba(16, 185, 129, 0.3);
+        }
+
+        .application-status.rejected {
+            background: linear-gradient(135deg, rgba(239, 68, 68, 0.15) 0%, rgba(239, 68, 68, 0.05) 100%);
+            color: var(--danger);
+            border: 1px solid rgba(239, 68, 68, 0.3);
+        }
+
+        .notification-panel {
+            background: rgba(255, 255, 255, 0.8);
+            backdrop-filter: var(--blur-md);
+            border-radius: var(--border-radius-lg);
+            box-shadow: var(--shadow-md);
+            border: 1px solid rgba(255, 255, 255, 0.6);
+            max-width: 100%;
+            overflow: hidden;
+            transition: var(--transition);
+        }
+
+        .notification-panel:hover {
+            box-shadow: var(--shadow-lg);
+            border-color: rgba(79, 70, 229, 0.2);
+        }
+
+        .notification-list {
+            max-height: 400px;
+            overflow-y: auto;
+        }
+
+        .notification-item {
+            padding: var(--spacing-md);
+            border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+            display: flex;
+            gap: var(--spacing-md);
+            cursor: pointer;
+            transition: var(--transition-fast);
+        }
+
+        .notification-item:last-child {
+            border-bottom: none;
+        }
+
+        .notification-item:hover {
+            background: rgba(79, 70, 229, 0.05);
+            padding-left: calc(var(--spacing-md) + 4px);
+        }
+
+        .notification-icon {
+            font-size: 24px;
+            flex-shrink: 0;
+        }
+
+        .notification-content {
+            flex: 1;
+            min-width: 0;
+            position: relative;
+            z-index: 1;
+        }
+
+        .notification-title {
+            font-weight: 600;
+            font-size: var(--font-size-sm);
+            margin-bottom: var(--spacing-xs);
+            color: var(--text-primary);
+        }
+
+        .notification-message {
+            font-size: var(--font-size-sm);
+            color: var(--text-secondary);
+            margin: 0;
+        }
+
+        .notification-time {
+            font-size: var(--font-size-xs);
+            color: var(--text-muted);
+            margin-top: var(--spacing-xs);
+        }
+
+        .quick-actions {
+            display: flex;
+            flex-wrap: wrap;
+            gap: var(--spacing-md);
+            animation: slideInUp 0.6s ease;
+        }
+
+        .quick-action-btn {
+            flex: 1;
+            min-width: 150px;
+            padding: var(--spacing-md) var(--spacing-lg);
+            text-align: center;
+            text-decoration: none;
+            border-radius: var(--border-radius-lg);
+            font-weight: 600;
+            transition: var(--transition);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .two-column-layout {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: var(--spacing-lg);
+        }
+
+        @keyframes slideInUp {
+            from {
+                transform: translateY(30px);
+                opacity: 0;
+            }
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+
+        @media (max-width: 1024px) {
+            .two-column-layout {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Navigation Bar -->
+    <nav class="navbar">
+        <div class="navbar-container">
+            <a href="index.html" class="navbar-brand">
+                <svg width="32" height="32" viewBox="0 0 32 32" fill="none">
+                    <rect width="32" height="32" rx="8" fill="#1E3A8A"/>
+                    <text x="50%" y="50%" text-anchor="middle" dy="0.3em" font-size="18" font-weight="bold" fill="white">S</text>
+                </svg>
+                <span>Campus Nexus</span>
+            </a>
+            <div class="navbar-menu">
+                <a href="dashboard.html" class="active">Dashboard</a>
+                <a href="jobs.html">Browse Jobs</a>
+                <a href="profile.html">Profile</a>
+                <a href="applications.html">Applications</a>
+            </div>
+            <div class="navbar-end">
+                <div style="display: flex; align-items: center; gap: var(--spacing-md);">
+                    <a href="profile.html" id="user-initials" style="width: 36px; height: 36px; border-radius: 50%; background: linear-gradient(135deg, var(--primary), var(--secondary)); display: flex; align-items: center; justify-content: center; color: white; font-weight: bold; text-decoration: none;">--</a>
+                    <button style="background: none; border: none; cursor: pointer; color: var(--text-secondary); font-weight: 600;" onclick="logout()">Logout</button>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <div class="main-content" style="background: var(--bg-light);">
+        <div class="container">
+            <!-- Header -->
+            <div class="dashboard-header">
+                <div>
+                    <h1 id="welcome-message">Welcome back! 👋</h1>
+                    <p style="color: var(--text-secondary); margin: var(--spacing-sm) 0 0;">Here's what's happening with your placements</p>
+                </div>
+                <a href="jobs.html" class="btn btn-primary">Explore Jobs</a>
+            </div>
+
+            <!-- Dashboard Widgets -->
+            <div class="dashboard-widgets">
+                <div class="widget">
+                    <div class="widget-icon">💼</div>
+                    <div class="widget-title">Jobs Applied</div>
+                    <div class="widget-value" id="jobs-applied">0</div>
+                    <div class="widget-subtitle">In progress</div>
+                </div>
+
+                <div class="widget">
+                    <div class="widget-icon">⭐</div>
+                    <div class="widget-title">Shortlisted</div>
+                    <div class="widget-value" id="shortlisted-count">0</div>
+                    <div class="widget-subtitle">Awaiting interviews</div>
+                </div>
+
+                <div class="widget">
+                    <div class="widget-icon">✅</div>
+                    <div class="widget-title">Offers Received</div>
+                    <div class="widget-value" id="offers-count">0</div>
+                    <div class="widget-subtitle">Pending decision</div>
+                </div>
+
+                <div class="widget">
+                    <div class="widget-icon">📅</div>
+                    <div class="widget-title">Upcoming</div>
+                    <div class="widget-value" id="upcoming-count">0</div>
+                    <div class="widget-subtitle">Interview this week</div>
+                </div>
+            </div>
+
+            <!-- Two Column Layout -->
+            <div class="two-column-layout">
+                <div>
+                    <!-- Profile Completion -->
+                    <div class="profile-completion-section">
+                        <div class="profile-completion-header">
+                            <h3 style="margin: 0;">Complete Your Profile</h3>
+                            <div class="completion-percentage" id="completion-percentage">0%</div>
+                        </div>
+                        <div style="margin-bottom: var(--spacing-lg);">
+                            <div class="progress-bar">
+                                <div class="progress-bar-fill" id="completion-bar" style="width: 0%;"></div>
+                            </div>
+                        </div>
+                        <div class="profile-items" id="profile-items-container">
+                            <!-- Dynamic profile items will be loaded here -->
+                        </div>
+                        <button class="btn btn-secondary btn-block" style="margin-top: var(--spacing-lg);">Complete Profile</button>
+                    </div>
+
+                    <!-- Application Status Cards -->
+                    <h3 style="margin-top: var(--spacing-xl); margin-bottom: var(--spacing-lg);">Recent Applications</h3>
+                    <div class="applications-section" id="applications-container">
+                        <!-- Dynamic applications will be loaded here -->
+                    </div>
+
+                    <!-- Quick Actions -->
+                    <h3 style="margin-top: var(--spacing-xl); margin-bottom: var(--spacing-lg);">Quick Actions</h3>
+                    <div class="quick-actions">
+                        <a href="jobs.html" class="btn btn-secondary quick-action-btn">Browse Jobs</a>
+                        <a href="profile.html" class="btn btn-outline quick-action-btn">Update Profile</a>
+                        <a href="applications.html" class="btn btn-ghost quick-action-btn">View All Apps</a>
+                    </div>
+                </div>
+
+                <!-- Notifications Panel -->
+                <div>
+                    <div class="notification-panel">
+                        <div style="padding: var(--spacing-lg); border-bottom: 2px solid var(--border-color);">
+                            <h3 style="margin: 0;">Notifications</h3>
+                        </div>
+                        <div class="notification-list">
+                            <div class="notification-item">
+                                <div class="notification-icon">⭐</div>
+                                <div class="notification-content">
+                                    <div class="notification-title">You've been shortlisted</div>
+                                    <p class="notification-message">Infosys has shortlisted you for Data Analyst role</p>
+                                    <div class="notification-time">2 hours ago</div>
+                                </div>
+                            </div>
+
+                            <div class="notification-item">
+                                <div class="notification-icon">💼</div>
+                                <div class="notification-content">
+                                    <div class="notification-title">New job opening</div>
+                                    <p class="notification-message">Amazon is hiring for Senior Developer positions</p>
+                                    <div class="notification-time">5 hours ago</div>
+                                </div>
+                            </div>
+
+                            <div class="notification-item">
+                                <div class="notification-icon">📋</div>
+                                <div class="notification-content">
+                                    <div class="notification-title">Interview scheduled</div>
+                                    <p class="notification-message">Your interview is on Jan 25 at 3:00 PM</p>
+                                    <div class="notification-time">1 day ago</div>
+                                </div>
+                            </div>
+
+                            <div class="notification-item">
+                                <div class="notification-icon">✅</div>
+                                <div class="notification-content">
+                                    <div class="notification-title">Application accepted</div>
+                                    <p class="notification-message">Your application to Wipro has been accepted</p>
+                                    <div class="notification-time">2 days ago</div>
+                                </div>
+                            </div>
+
+                            <div class="notification-item">
+                                <div class="notification-icon">📢</div>
+                                <div class="notification-content">
+                                    <div class="notification-title">Placement Drive announced</div>
+                                    <p class="notification-message">TCS placement drive starting Jan 20</p>
+                                    <div class="notification-time">5 days ago</div>
+                                </div>
+                            </div>
+                        </div>
+                        <div style="padding: var(--spacing-md); border-top: 1px solid var(--border-color); text-align: center;">
+                            <a href="#notifications" style="color: var(--secondary); font-weight: 600; text-decoration: none;">View all notifications</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="js/main.js"></script>
+    <script>
+        // Check if user is logged in
+        if (!SessionManager.isLoggedIn()) {
+            window.location.href = 'login.html';
+        }
+
+        // Logout function
+        function logout() {
+            if (confirm('Are you sure you want to logout?')) {
+                SessionManager.logout();
+                Toast.info('Logged out successfully');
+                setTimeout(() => {
+                    window.location.href = 'index.html';
+                }, 500);
+            }
+        }
+
+        // Initialize dashboard with real data from UserDataManager
+        document.addEventListener('DOMContentLoaded', () => {
+            const currentUser = SessionManager.getCurrentUser();
+            
+            if (currentUser) {
+                // Set welcome message and user initials
+                const welcomeMsg = document.getElementById('welcome-message');
+                const userInitials = document.getElementById('user-initials');
+                const firstName = currentUser.name.split(' ')[0];
+                
+                welcomeMsg.textContent = `Welcome back, ${firstName}! 👋`;
+                const initials = currentUser.name.split(' ').map(n => n.charAt(0)).join('').toUpperCase();
+                userInitials.textContent = initials || '--';
+                
+                // Get user data from UserDataManager
+                const applications = UserDataManager.getApplications(currentUser.email);
+                const profileCompletion = UserDataManager.getProfileCompletion(currentUser.email);
+                const profileItems = UserDataManager.getProfileItems(currentUser.email);
+                
+                // Calculate counts based on applications
+                const shortlistedCount = applications.filter(app => app.status === 'shortlisted').length;
+                const offersCount = applications.filter(app => app.status === 'selected').length;
+                const upcomingInterviews = shortlistedCount; // Upcoming interviews = shortlisted count
+                
+                // Update dashboard widgets with real data
+                document.getElementById('jobs-applied').textContent = applications.length;
+                document.getElementById('shortlisted-count').textContent = shortlistedCount;
+                document.getElementById('offers-count').textContent = offersCount;
+                document.getElementById('upcoming-count').textContent = upcomingInterviews;
+                
+                // Update profile completion
+                const completionPercentage = document.getElementById('completion-percentage');
+                const completionBar = document.getElementById('completion-bar');
+                completionPercentage.textContent = profileCompletion + '%';
+                completionBar.style.width = profileCompletion + '%';
+                
+                // Populate profile items
+                const profileItemsContainer = document.getElementById('profile-items-container');
+                profileItemsContainer.innerHTML = '';
+                profileItems.forEach(item => {
+                    const profileItem = document.createElement('div');
+                    profileItem.className = 'profile-item';
+                    profileItem.innerHTML = `
+                        <div class="profile-item-check ${item.complete ? 'complete' : 'incomplete'}">
+                            ${item.complete ? '✓' : '○'}
+                        </div>
+                        <div class="profile-item-content">
+                            <div class="profile-item-label">${item.label}</div>
+                            <div class="profile-item-progress">${item.progress}</div>
+                        </div>
+                    `;
+                    profileItemsContainer.appendChild(profileItem);
+                });
+                
+                // Populate applications
+                const applicationsContainer = document.getElementById('applications-container');
+                applicationsContainer.innerHTML = '';
+                
+                if (applications.length === 0) {
+                    // Show empty state
+                    applicationsContainer.innerHTML = `
+                        <div style="grid-column: 1 / -1; text-align: center; padding: 40px; background: rgba(255,255,255,0.8); border-radius: var(--border-radius-lg); backdrop-filter: var(--blur-md);">
+                            <p style="color: var(--text-muted); font-size: 18px; margin: 0;">No applications yet.</p>
+                            <p style="color: var(--text-muted); font-size: 14px; margin: 10px 0 0;">Start applying for jobs to see them here!</p>
+                            <a href="jobs.html" class="btn btn-primary" style="margin-top: 16px; display: inline-block;">Browse Jobs</a>
+                        </div>
+                    `;
+                } else {
+                    applications.forEach(app => {
+                        const appCard = document.createElement('div');
+                        appCard.className = `application-card ${app.status}`;
+                        appCard.innerHTML = `
+                            <div class="application-status ${app.status}">${app.status.toUpperCase()}</div>
+                            <h4 style="margin: 0 0 8px 0; color: var(--text-primary); font-size: 16px;">${app.company}</h4>
+                            <p style="margin: 0 0 8px 0; color: var(--text-secondary); font-size: 14px;">${app.position}</p>
+                            <small style="color: var(--text-muted); font-size: 12px;">Applied: ${app.appliedDate}</small>
+                        `;
+                        applicationsContainer.appendChild(appCard);
+                    });
+                }
+            }
+            
+            SidebarNav.init();
+        });
+    </script>
+</body>
+</html>

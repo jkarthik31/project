@@ -1,0 +1,896 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Profile - Student Placement Portal</title>
+    <link rel="stylesheet" href="css/style.css">
+    <style>
+        .profile-header {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+            color: white;
+            padding: var(--spacing-xl);
+            border-radius: var(--border-radius-lg);
+            margin-bottom: var(--spacing-xl);
+            display: flex;
+            gap: var(--spacing-lg);
+            align-items: flex-start;
+            box-shadow: var(--shadow-lg);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .profile-header::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            right: -10%;
+            width: 400px;
+            height: 400px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 50%;
+            pointer-events: none;
+        }
+
+        .profile-header::after {
+            content: '';
+            position: absolute;
+            bottom: -30%;
+            left: -5%;
+            width: 300px;
+            height: 300px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 50%;
+            pointer-events: none;
+        }
+
+        .profile-photo {
+            width: 130px;
+            height: 130px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.25);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 56px;
+            flex-shrink: 0;
+            border: 4px solid white;
+            box-shadow: var(--shadow-xl);
+            position: relative;
+            z-index: 2;
+            transition: var(--transition);
+        }
+
+        .profile-header:hover .profile-photo {
+            transform: scale(1.05);
+        }
+
+        .profile-info {
+            flex: 1;
+            position: relative;
+            z-index: 2;
+        }
+
+        .profile-info h1 {
+            color: white;
+            margin-bottom: var(--spacing-xs);
+            font-size: var(--font-size-3xl);
+            font-weight: 800;
+        }
+
+        .profile-details {
+            display: flex;
+            gap: var(--spacing-lg);
+            flex-wrap: wrap;
+            margin-top: var(--spacing-md);
+        }
+
+        .profile-detail-item {
+            display: flex;
+            flex-direction: column;
+            gap: var(--spacing-xs);
+        }
+
+        .profile-detail-label {
+            font-size: var(--font-size-sm);
+            opacity: 0.85;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            font-weight: 600;
+        }
+
+        .profile-detail-value {
+            font-size: var(--font-size-lg);
+            font-weight: 700;
+        }
+
+        .edit-profile-btn {
+            align-self: flex-start;
+            margin-top: var(--spacing-md);
+        }
+
+        .profile-tabs {
+            display: flex;
+            gap: var(--spacing-md);
+            border-bottom: 2px solid var(--border-color);
+            margin-bottom: var(--spacing-xl);
+            overflow-x: auto;
+            padding-bottom: 2px;
+        }
+
+        .profile-tab {
+            padding: var(--spacing-md) var(--spacing-lg);
+            cursor: pointer;
+            border-bottom: 3px solid transparent;
+            font-weight: 600;
+            color: var(--text-secondary);
+            transition: var(--transition-fast);
+            margin-bottom: -2px;
+            white-space: nowrap;
+            position: relative;
+        }
+
+        .profile-tab::after {
+            content: '';
+            position: absolute;
+            bottom: -2px;
+            left: 0;
+            width: 0;
+            height: 3px;
+            background: linear-gradient(90deg, var(--secondary), var(--secondary-light));
+            transition: width 0.3s ease;
+        }
+
+        .profile-tab:hover {
+            color: var(--secondary);
+        }
+
+        .profile-tab.active {
+            color: var(--secondary);
+            border-bottom-color: transparent;
+        }
+
+        .profile-tab.active::after {
+            width: 100%;
+        }
+
+        .profile-tab-content {
+            display: none;
+        }
+
+        .profile-tab-content.active {
+            display: block;
+            animation: slideInUp 0.4s ease;
+        }
+
+        .form-section {
+            background: rgba(255, 255, 255, 0.8);
+            backdrop-filter: var(--blur-md);
+            padding: var(--spacing-lg);
+            border-radius: var(--border-radius-lg);
+            border: 1px solid rgba(255, 255, 255, 0.6);
+            margin-bottom: var(--spacing-lg);
+            box-shadow: var(--shadow-md);
+            transition: var(--transition);
+        }
+
+        .form-section:hover {
+            box-shadow: var(--shadow-lg);
+            border-color: rgba(79, 70, 229, 0.2);
+        }
+
+        .form-section-title {
+            font-size: var(--font-size-lg);
+            font-weight: 700;
+            margin-bottom: var(--spacing-lg);
+            padding-bottom: var(--spacing-md);
+            border-bottom: 2px solid rgba(0, 0, 0, 0.05);
+            background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .skill-tags {
+            display: flex;
+            gap: var(--spacing-sm);
+            flex-wrap: wrap;
+            margin-top: var(--spacing-md);
+        }
+
+        .skill-tag {
+            background: linear-gradient(135deg, var(--secondary) 0%, var(--secondary-light) 100%);
+            color: white;
+            padding: var(--spacing-xs) var(--spacing-md);
+            border-radius: 20px;
+            font-size: var(--font-size-sm);
+            display: flex;
+            align-items: center;
+            gap: var(--spacing-xs);
+            box-shadow: var(--shadow-md);
+            transition: var(--transition-fast);
+        }
+
+        .skill-tag:hover {
+            transform: translateY(-3px);
+            box-shadow: var(--shadow-lg);
+        }
+
+        .skill-tag-remove {
+            cursor: pointer;
+            font-weight: bold;
+            transition: var(--transition-fast);
+        }
+
+        .skill-tag-remove:hover {
+            opacity: 0.8;
+        }
+
+        .add-skill-input {
+            display: flex;
+            gap: var(--spacing-sm);
+            margin-top: var(--spacing-md);
+        }
+
+        .resume-upload {
+            border: 2px dashed var(--secondary);
+            border-radius: var(--border-radius-lg);
+            padding: var(--spacing-lg);
+            text-align: center;
+            cursor: pointer;
+            transition: var(--transition);
+            background: linear-gradient(135deg, rgba(79, 70, 229, 0.05) 0%, rgba(79, 70, 229, 0.02) 100%);
+        }
+
+        .resume-upload:hover {
+            border-color: var(--secondary-light);
+            background: linear-gradient(135deg, rgba(79, 70, 229, 0.15) 0%, rgba(79, 70, 229, 0.05) 100%);
+            transform: translateY(-4px);
+        }
+
+        .resume-upload-icon {
+            font-size: 32px;
+            margin-bottom: var(--spacing-md);
+        }
+
+        .certificate-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+            gap: var(--spacing-lg);
+            margin-top: var(--spacing-lg);
+        }
+
+        .certificate-card {
+            background: rgba(255, 255, 255, 0.8);
+            border: 1px solid rgba(255, 255, 255, 0.6);
+            border-radius: var(--border-radius-lg);
+            overflow: hidden;
+            transition: var(--transition);
+            box-shadow: var(--shadow-md);
+        }
+
+        .certificate-card:hover {
+            box-shadow: var(--shadow-lg);
+            transform: translateY(-8px) scale(1.02);
+            border-color: rgba(79, 70, 229, 0.3);
+        }
+
+        .certificate-preview {
+            width: 100%;
+            height: 140px;
+            background: linear-gradient(135deg, var(--secondary) 0%, var(--secondary-light) 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 48px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .certificate-preview::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            right: -20%;
+            width: 200px;
+            height: 200px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 50%;
+            pointer-events: none;
+        }
+
+        .certificate-info {
+            padding: var(--spacing-md);
+        }
+
+        .certificate-name {
+            font-weight: 600;
+            font-size: var(--font-size-sm);
+            margin-bottom: var(--spacing-xs);
+        }
+
+        .certificate-issuer {
+            font-size: var(--font-size-xs);
+            color: var(--text-muted);
+            margin-bottom: var(--spacing-sm);
+        }
+
+        .certificate-actions {
+            display: flex;
+            gap: var(--spacing-xs);
+        }
+
+        .certificate-actions button {
+            flex: 1;
+            padding: var(--spacing-xs) var(--spacing-sm);
+            font-size: var(--font-size-xs);
+        }
+
+        .social-links {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: var(--spacing-md);
+            margin-top: var(--spacing-lg);
+        }
+
+        .social-link-input {
+            display: flex;
+            align-items: center;
+            gap: var(--spacing-md);
+        }
+
+        .social-link-icon {
+            font-size: 24px;
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: var(--bg-gray);
+            border-radius: var(--border-radius);
+        }
+
+        .file-input-hidden {
+            display: none;
+        }
+
+        .uploaded-file {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: var(--spacing-md);
+            background: var(--bg-gray);
+            border-radius: var(--border-radius);
+            margin-top: var(--spacing-md);
+        }
+
+        .uploaded-file-name {
+            display: flex;
+            align-items: center;
+            gap: var(--spacing-md);
+        }
+
+        .uploaded-file-icon {
+            font-size: 24px;
+        }
+
+        .uploaded-file-info {
+            flex: 1;
+        }
+
+        .uploaded-file-title {
+            font-weight: 600;
+            font-size: var(--font-size-sm);
+        }
+
+        .uploaded-file-size {
+            font-size: var(--font-size-xs);
+            color: var(--text-muted);
+        }
+
+        .uploaded-file-action {
+            display: flex;
+            gap: var(--spacing-sm);
+        }
+
+        .save-btn-group {
+            display: flex;
+            gap: var(--spacing-md);
+            justify-content: flex-end;
+        }
+
+        @media (max-width: 768px) {
+            .profile-header {
+                flex-direction: column;
+                text-align: center;
+                align-items: center;
+            }
+
+            .profile-details {
+                justify-content: center;
+            }
+
+            .profile-tabs {
+                overflow-x: auto;
+                -webkit-overflow-scrolling: touch;
+            }
+
+            .certificate-grid {
+                grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+            }
+
+            .social-links {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Navigation Bar -->
+    <nav class="navbar">
+        <div class="navbar-container">
+            <a href="dashboard.html" class="navbar-brand">
+                <svg width="32" height="32" viewBox="0 0 32 32" fill="none">
+                    <rect width="32" height="32" rx="8" fill="#1E3A8A"/>
+                    <text x="50%" y="50%" text-anchor="middle" dy="0.3em" font-size="18" font-weight="bold" fill="white">S</text>
+                </svg>
+                <span>Campus Nexus</span>
+            </a>
+            <div class="navbar-menu">
+                <a href="dashboard.html">Dashboard</a>
+                <a href="jobs.html">Browse Jobs</a>
+                <a href="profile.html" class="active">Profile</a>
+                <a href="applications.html">Applications</a>
+            </div>
+            <div class="navbar-end">
+                <div style="display: flex; align-items: center; gap: var(--spacing-md);">
+                    <a href="profile.html" id="user-initials" style="width: 36px; height: 36px; border-radius: 50%; background: linear-gradient(135deg, var(--primary), var(--secondary)); display: flex; align-items: center; justify-content: center; color: white; font-weight: bold; text-decoration: none;">JD</a>
+                    <button style="background: none; border: none; cursor: pointer; color: var(--text-secondary); font-weight: 600;" onclick="logout()">Logout</button>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <div class="main-content" style="background: var(--bg-light);">
+        <div class="container">
+            <!-- Profile Header -->
+            <div class="profile-header">
+                <div class="profile-photo">👤</div>
+                <div class="profile-info">
+                    <h1>John Doe</h1>
+                    <p>Computer Science | Batch 2024</p>
+                    <div class="profile-details">
+                        <div class="profile-detail-item">
+                            <div class="profile-detail-label">Department</div>
+                            <div class="profile-detail-value">CSE</div>
+                        </div>
+                        <div class="profile-detail-item">
+                            <div class="profile-detail-label">Current Year</div>
+                            <div class="profile-detail-value">Final Year</div>
+                        </div>
+                        <div class="profile-detail-item">
+                            <div class="profile-detail-label">CGPA</div>
+                            <div class="profile-detail-value">8.5</div>
+                        </div>
+                        <div class="profile-detail-item">
+                            <div class="profile-detail-label">Email</div>
+                            <div class="profile-detail-value">john.doe@college.edu</div>
+                        </div>
+                    </div>
+                </div>
+                <div style="display: flex; gap: var(--spacing-md);">
+                    <button class="btn btn-primary edit-profile-btn" onclick="window.location.href='student-profile.html'">📋 Detailed Profile</button>
+                    <button class="btn btn-primary edit-profile-btn" onclick="enableEditMode()">✏️ Edit Profile</button>
+                </div>
+            </div>
+
+            <!-- Profile Tabs -->
+            <div class="profile-tabs">
+                <div class="profile-tab active" onclick="switchProfileTab('personal')">Personal Details</div>
+                <div class="profile-tab" onclick="switchProfileTab('academic')">Academic Details</div>
+                <div class="profile-tab" onclick="switchProfileTab('resume')">Resume & Documents</div>
+                <div class="profile-tab" onclick="switchProfileTab('certificates')">Certificates</div>
+                <div class="profile-tab" onclick="switchProfileTab('social')">Social Links</div>
+            </div>
+
+            <!-- Tab Contents -->
+
+            <!-- Personal Details Tab -->
+            <div id="personal-tab" class="profile-tab-content active">
+                <div class="form-section">
+                    <h3 class="form-section-title">Personal Information</h3>
+                    <form id="personalForm">
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>First Name</label>
+                                <input type="text" value="John" disabled>
+                            </div>
+                            <div class="form-group">
+                                <label>Last Name</label>
+                                <input type="text" value="Doe" disabled>
+                            </div>
+                        </div>
+
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>Email Address</label>
+                                <input type="email" value="john.doe@college.edu" disabled>
+                            </div>
+                            <div class="form-group">
+                                <label>Phone Number</label>
+                                <input type="tel" value="+91 9876543210" disabled>
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label>Date of Birth</label>
+                            <input type="date" value="2002-05-15" disabled>
+                        </div>
+
+                        <div class="form-group">
+                            <label>Gender</label>
+                            <select disabled>
+                                <option>Male</option>
+                                <option>Female</option>
+                                <option>Other</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group">
+                            <label>Address</label>
+                            <input type="text" value="123 Main Street, City, State 12345" disabled>
+                        </div>
+
+                        <div class="save-btn-group" id="personalBtnGroup" style="display: none;">
+                            <button type="button" class="btn btn-ghost" onclick="disableEditMode()">Cancel</button>
+                            <button type="submit" class="btn btn-primary">Save Changes</button>
+                        </div>
+                    </form>
+                </div>
+
+                <!-- Skills Section -->
+                <div class="form-section">
+                    <h3 class="form-section-title">Skills</h3>
+                    <div class="skill-tags">
+                        <div class="skill-tag">
+                            JavaScript
+                            <span class="skill-tag-remove" onclick="removeSkill(this)">×</span>
+                        </div>
+                        <div class="skill-tag">
+                            React
+                            <span class="skill-tag-remove" onclick="removeSkill(this)">×</span>
+                        </div>
+                        <div class="skill-tag">
+                            Python
+                            <span class="skill-tag-remove" onclick="removeSkill(this)">×</span>
+                        </div>
+                        <div class="skill-tag">
+                            MongoDB
+                            <span class="skill-tag-remove" onclick="removeSkill(this)">×</span>
+                        </div>
+                    </div>
+                    <div class="add-skill-input">
+                        <input type="text" id="skillInput" placeholder="Add a new skill...">
+                        <button type="button" class="btn btn-secondary" onclick="addSkill()">Add Skill</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Academic Details Tab -->
+            <div id="academic-tab" class="profile-tab-content">
+                <div class="form-section">
+                    <h3 class="form-section-title">Academic Information</h3>
+                    <form id="academicForm">
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>Department</label>
+                                <input type="text" value="Computer Science and Engineering" disabled>
+                            </div>
+                            <div class="form-group">
+                                <label>Current Year</label>
+                                <select disabled>
+                                    <option>Final Year (4th Year)</option>
+                                    <option>3rd Year</option>
+                                    <option>2nd Year</option>
+                                    <option>1st Year</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>Current CGPA</label>
+                                <input type="number" value="8.5" step="0.1" disabled>
+                            </div>
+                            <div class="form-group">
+                                <label>10th Board Score (%)</label>
+                                <input type="number" value="92.5" step="0.1" disabled>
+                            </div>
+                        </div>
+
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>12th Board Score (%)</label>
+                                <input type="number" value="88.0" step="0.1" disabled>
+                            </div>
+                            <div class="form-group">
+                                <label>JEE Main Score</label>
+                                <input type="number" value="285" disabled>
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label>Backlogs</label>
+                            <input type="number" value="0" disabled>
+                        </div>
+
+                        <div class="save-btn-group" id="academicBtnGroup" style="display: none;">
+                            <button type="button" class="btn btn-ghost" onclick="disableEditMode()">Cancel</button>
+                            <button type="submit" class="btn btn-primary">Save Changes</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Resume & Documents Tab -->
+            <div id="resume-tab" class="profile-tab-content">
+                <div class="form-section">
+                    <h3 class="form-section-title">Resume</h3>
+                    <div class="uploaded-file">
+                        <div class="uploaded-file-name">
+                            <div class="uploaded-file-icon">📄</div>
+                            <div class="uploaded-file-info">
+                                <div class="uploaded-file-title">John_Doe_Resume.pdf</div>
+                                <div class="uploaded-file-size">245 KB • Uploaded 10 days ago</div>
+                            </div>
+                        </div>
+                        <div class="uploaded-file-action">
+                            <button class="btn btn-sm btn-ghost">👁️ Preview</button>
+                            <button class="btn btn-sm btn-danger" onclick="if(confirm('Delete this file?')) alert('File deleted');">🗑️ Delete</button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-section">
+                    <h3 class="form-section-title">Upload New Resume</h3>
+                    <div class="resume-upload" onclick="document.getElementById('resumeInput').click()">
+                        <div class="resume-upload-icon">📥</div>
+                        <p style="margin: 0; font-weight: 600; color: var(--text-primary);">Click to upload or drag and drop</p>
+                        <p style="margin: var(--spacing-sm) 0 0; color: var(--text-secondary); font-size: var(--font-size-sm);">PDF or DOC • Max 5 MB</p>
+                    </div>
+                    <input type="file" id="resumeInput" class="file-input-hidden" accept=".pdf,.doc,.docx">
+                </div>
+
+                <div class="form-section">
+                    <h3 class="form-section-title">Cover Letter</h3>
+                    <div class="uploaded-file">
+                        <div class="uploaded-file-name">
+                            <div class="uploaded-file-icon">📄</div>
+                            <div class="uploaded-file-info">
+                                <div class="uploaded-file-title">CoverLetter.pdf</div>
+                                <div class="uploaded-file-size">128 KB • Uploaded 5 days ago</div>
+                            </div>
+                        </div>
+                        <div class="uploaded-file-action">
+                            <button class="btn btn-sm btn-ghost">👁️ Preview</button>
+                            <button class="btn btn-sm btn-danger" onclick="if(confirm('Delete this file?')) alert('File deleted');">🗑️ Delete</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Certificates Tab -->
+            <div id="certificates-tab" class="profile-tab-content">
+                <h3 class="form-section-title" style="margin-bottom: var(--spacing-lg);">Your Certificates</h3>
+                <div class="certificate-grid">
+                    <div class="certificate-card">
+                        <div class="certificate-preview">🎓</div>
+                        <div class="certificate-info">
+                            <div class="certificate-name">Python Fundamentals</div>
+                            <div class="certificate-issuer">Coursera</div>
+                            <div class="certificate-actions">
+                                <button class="btn btn-sm btn-ghost">View</button>
+                                <button class="btn btn-sm btn-danger">Delete</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="certificate-card">
+                        <div class="certificate-preview">🏆</div>
+                        <div class="certificate-info">
+                            <div class="certificate-name">Web Development Bootcamp</div>
+                            <div class="certificate-issuer">Udemy</div>
+                            <div class="certificate-actions">
+                                <button class="btn btn-sm btn-ghost">View</button>
+                                <button class="btn btn-sm btn-danger">Delete</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="certificate-card">
+                        <div class="certificate-preview">📊</div>
+                        <div class="certificate-info">
+                            <div class="certificate-name">Data Analytics Pro</div>
+                            <div class="certificate-issuer">LinkedIn Learning</div>
+                            <div class="certificate-actions">
+                                <button class="btn btn-sm btn-ghost">View</button>
+                                <button class="btn btn-sm btn-danger">Delete</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-section" style="margin-top: var(--spacing-xl);">
+                    <h3 class="form-section-title">Add New Certificate</h3>
+                    <div class="resume-upload" onclick="document.getElementById('certificateInput').click()">
+                        <div class="resume-upload-icon">📜</div>
+                        <p style="margin: 0; font-weight: 600; color: var(--text-primary);">Click to upload certificate</p>
+                        <p style="margin: var(--spacing-sm) 0 0; color: var(--text-secondary); font-size: var(--font-size-sm);">PDF, JPG or PNG • Max 5 MB</p>
+                    </div>
+                    <input type="file" id="certificateInput" class="file-input-hidden" accept=".pdf,.jpg,.jpeg,.png">
+
+                    <div class="form-group" style="margin-top: var(--spacing-lg);">
+                        <label>Certificate Name</label>
+                        <input type="text" placeholder="e.g., AWS Certified Developer">
+                    </div>
+
+                    <div class="form-group">
+                        <label>Issuing Organization</label>
+                        <input type="text" placeholder="e.g., Amazon Web Services">
+                    </div>
+
+                    <button type="button" class="btn btn-primary" onclick="addCertificate()">Add Certificate</button>
+                </div>
+            </div>
+
+            <!-- Social Links Tab -->
+            <div id="social-tab" class="profile-tab-content">
+                <div class="form-section">
+                    <h3 class="form-section-title">Connect Your Profiles</h3>
+                    <div class="social-links">
+                        <div class="social-link-input">
+                            <div class="social-link-icon">👔</div>
+                            <input type="url" placeholder="LinkedIn Profile URL" value="https://linkedin.com/in/johndoe">
+                        </div>
+                        <div class="social-link-input">
+                            <div class="social-link-icon">💻</div>
+                            <input type="url" placeholder="GitHub Profile URL" value="https://github.com/johndoe">
+                        </div>
+                        <div class="social-link-input">
+                            <div class="social-link-icon">🌐</div>
+                            <input type="url" placeholder="Portfolio Website URL" value="https://johndoe.com">
+                        </div>
+                        <div class="social-link-input">
+                            <div class="social-link-icon">🐦</div>
+                            <input type="url" placeholder="Twitter/X Profile URL">
+                        </div>
+                    </div>
+                    <button type="button" class="btn btn-primary" style="margin-top: var(--spacing-lg);">Save Social Links</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="js/main.js"></script>
+    <script>
+        // Check if user is logged in
+        if (!SessionManager.isLoggedIn()) {
+            window.location.href = 'login.html';
+        }
+
+        // Profile tab switching
+        function switchProfileTab(tab) {
+            document.querySelectorAll('.profile-tab-content').forEach(el => el.classList.remove('active'));
+            document.querySelectorAll('.profile-tab').forEach(el => el.classList.remove('active'));
+            
+            document.getElementById(tab + '-tab').classList.add('active');
+            event.target.classList.add('active');
+        }
+
+        // Edit mode functions
+        function enableEditMode() {
+            document.querySelectorAll('input, select, textarea').forEach(el => {
+                if (!el.id.includes('Input')) {
+                    el.disabled = false;
+                }
+            });
+            document.getElementById('personalBtnGroup').style.display = 'flex';
+            document.getElementById('academicBtnGroup').style.display = 'flex';
+            Toast.info('Edit mode enabled. Make your changes and click Save.');
+        }
+
+        function disableEditMode() {
+            document.querySelectorAll('input, select, textarea').forEach(el => {
+                if (!el.id.includes('Input')) {
+                    el.disabled = true;
+                }
+            });
+            document.getElementById('personalBtnGroup').style.display = 'none';
+            document.getElementById('academicBtnGroup').style.display = 'none';
+            Toast.warning('Changes discarded.');
+        }
+
+        // Skill management
+        function addSkill() {
+            const skillInput = document.getElementById('skillInput');
+            const skill = skillInput.value.trim();
+            
+            if (!skill) {
+                Toast.warning('Please enter a skill name');
+                return;
+            }
+
+            const skillTags = document.querySelector('.skill-tags');
+            const skillTag = document.createElement('div');
+            skillTag.className = 'skill-tag';
+            skillTag.innerHTML = `
+                ${skill}
+                <span class="skill-tag-remove" onclick="removeSkill(this)">×</span>
+            `;
+            
+            skillTags.appendChild(skillTag);
+            skillInput.value = '';
+            Toast.success('Skill added successfully!');
+        }
+
+        function removeSkill(element) {
+            element.parentElement.remove();
+            Toast.info('Skill removed.');
+        }
+
+        // Certificate management
+        function addCertificate() {
+            Toast.success('Certificate uploaded successfully!');
+            document.querySelector('input[placeholder*="Certificate Name"]').value = '';
+            document.querySelector('input[placeholder*="Issuing Organization"]').value = '';
+        }
+
+        // Form submission handlers
+        document.getElementById('personalForm')?.addEventListener('submit', function(e) {
+            e.preventDefault();
+            Toast.success('Personal details updated successfully!');
+            disableEditMode();
+        });
+
+        document.getElementById('academicForm')?.addEventListener('submit', function(e) {
+            e.preventDefault();
+            const currentUser = SessionManager.getCurrentUser();
+            if (currentUser) {
+                // Update profile completion for Education Details (item index 1)
+                UserDataManager.updateProfileItem(currentUser.email, 1, '100%', true);
+                // Update item 2 (Skills & Experience) to 50% if form has values
+                const skillsInput = document.querySelector('[name="skills"]');
+                if (skillsInput && skillsInput.value.trim()) {
+                    UserDataManager.updateProfileItem(currentUser.email, 2, '100%', true);
+                }
+            }
+            Toast.success('Academic details updated successfully!');
+            disableEditMode();
+        });
+
+        // Check if user has uploaded resume - track in profile
+        document.getElementById('resumeForm')?.addEventListener('submit', function(e) {
+            e.preventDefault();
+            const currentUser = SessionManager.getCurrentUser();
+            if (currentUser) {
+                // Mark Resume Upload (item index 3) as complete
+                UserDataManager.updateProfileItem(currentUser.email, 3, '100%', true);
+            }
+            Toast.success('Resume uploaded successfully!');
+        });
+
+        // Logout function
+        function logout() {
+            if (confirm('Are you sure you want to logout?')) {
+                SessionManager.logout();
+                Toast.info('Logged out successfully');
+                setTimeout(() => {
+                    window.location.href = 'index.html';
+                }, 500);
+            }
+        }
+    </script>
+</body>
+</html>

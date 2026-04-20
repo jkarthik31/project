@@ -1,0 +1,488 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Teacher Dashboard - Student Verification</title>
+    <link rel="stylesheet" href="css/style.css">
+    <style>
+        .teacher-container {
+            display: grid;
+            grid-template-columns: 1fr 3fr;
+            gap: var(--spacing-lg);
+            min-height: 100vh;
+            background: var(--bg-gray);
+        }
+
+        .teacher-sidebar {
+            background: white;
+            padding: var(--spacing-lg);
+            box-shadow: var(--shadow-md);
+        }
+
+        .teacher-sidebar h3 {
+            color: var(--primary);
+            margin-bottom: var(--spacing-md);
+        }
+
+        .filter-group {
+            margin-bottom: var(--spacing-lg);
+        }
+
+        .filter-group label {
+            display: block;
+            font-size: var(--font-size-sm);
+            color: var(--text-secondary);
+            margin-bottom: var(--spacing-sm);
+        }
+
+        .filter-group select,
+        .filter-group input {
+            width: 100%;
+            padding: var(--spacing-sm);
+            border: 1px solid var(--border-color);
+            border-radius: var(--border-radius-md);
+            font-size: var(--font-size-base);
+            transition: all 0.3s ease;
+        }
+
+        .filter-group input:focus,
+        .filter-group select:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(30, 58, 138, 0.1);
+            background-color: rgba(30, 58, 138, 0.02);
+        }
+
+        .teacher-content {
+            padding: var(--spacing-lg);
+        }
+
+        .content-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: var(--spacing-lg);
+            background: white;
+            padding: var(--spacing-lg);
+            border-radius: var(--border-radius-lg);
+            box-shadow: var(--shadow-sm);
+        }
+
+        .content-header h2 {
+            color: var(--primary);
+            margin: 0;
+        }
+
+        .students-grid {
+            display: grid;
+            gap: var(--spacing-lg);
+        }
+
+        .student-card {
+            background: white;
+            padding: var(--spacing-lg);
+            border-radius: var(--border-radius-lg);
+            box-shadow: var(--shadow-md);
+            border-left: 4px solid var(--primary);
+            transition: all 0.3s ease;
+        }
+
+        .student-card:hover {
+            box-shadow: var(--shadow-lg);
+            transform: translateY(-3px);
+        }
+
+        .student-card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: start;
+            margin-bottom: var(--spacing-md);
+        }
+
+        .student-info h4 {
+            color: var(--primary);
+            margin: 0 0 var(--spacing-sm) 0;
+        }
+
+        .student-meta {
+            font-size: var(--font-size-sm);
+            color: var(--text-secondary);
+            margin: 0;
+        }
+
+        .status-badge {
+            padding: var(--spacing-sm) var(--spacing-md);
+            border-radius: var(--border-radius-md);
+            font-size: var(--font-size-sm);
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+
+        .status-pending {
+            background: #FEF3C7;
+            color: #92400E;
+        }
+
+        .status-verified {
+            background: #D1FAE5;
+            color: #065F46;
+        }
+
+        .verification-items {
+            margin: var(--spacing-md) 0;
+            padding: var(--spacing-md);
+            background: var(--bg-gray);
+            border-radius: var(--border-radius-md);
+        }
+
+        .verification-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: var(--spacing-sm) 0;
+            font-size: var(--font-size-sm);
+        }
+
+        .verification-item-label {
+            color: var(--text-secondary);
+        }
+
+        .verification-checkbox {
+            width: 20px;
+            height: 20px;
+            cursor: pointer;
+        }
+
+        .remarks-section {
+            margin: var(--spacing-md) 0;
+        }
+
+        .remarks-section label {
+            display: block;
+            font-size: var(--font-size-sm);
+            color: var(--text-secondary);
+            margin-bottom: var(--spacing-sm);
+        }
+
+        .remarks-section textarea {
+            width: 100%;
+            padding: var(--spacing-sm);
+            border: 1px solid var(--border-color);
+            border-radius: var(--border-radius-md);
+            font-size: var(--font-size-base);
+            resize: vertical;
+            min-height: 80px;
+            transition: all 0.3s ease;
+        }
+
+        .remarks-section textarea:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(30, 58, 138, 0.1);
+        }
+
+        .action-buttons {
+            display: flex;
+            gap: var(--spacing-md);
+            margin-top: var(--spacing-md);
+        }
+
+        .action-buttons button {
+            flex: 1;
+            padding: var(--spacing-sm) var(--spacing-md);
+            border: none;
+            border-radius: var(--border-radius-md);
+            font-size: var(--font-size-base);
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+
+        .action-buttons button:active {
+            opacity: 0.9;
+        }
+
+        .btn-verify {
+            background: #10B981;
+            color: white;
+        }
+
+        .btn-needs-improvement {
+            background: #F59E0B;
+            color: white;
+        }
+
+        .view-profile-link {
+            color: var(--secondary);
+            text-decoration: none;
+            font-weight: 500;
+        }
+
+        @media (max-width: 768px) {
+            .teacher-container {
+                grid-template-columns: 1fr;
+            }
+
+            .teacher-sidebar {
+                padding: var(--spacing-md);
+            }
+
+            .content-header {
+                flex-direction: column;
+                gap: var(--spacing-md);
+            }
+
+            .student-card-header {
+                flex-direction: column;
+            }
+
+            .action-buttons {
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Navigation Bar -->
+    <nav class="navbar">
+        <div class="navbar-container">
+            <a href="teacher.html" class="navbar-brand">
+                <svg width="32" height="32" viewBox="0 0 32 32" fill="none">
+                    <rect width="32" height="32" rx="8" fill="#1E3A8A"/>
+                    <text x="50%" y="50%" text-anchor="middle" dy="0.3em" font-size="18" font-weight="bold" fill="white">T</text>
+                </svg>
+                <span>Campus Nexus - Teacher</span>
+            </a>
+            <div class="navbar-end">
+                <span id="teacherName" style="color: white; margin-right: var(--spacing-lg);">Teacher</span>
+                <button class="btn btn-outline" onclick="window.location.href='teacher-profile.html'" style="border-color: white; color: white; margin-right: var(--spacing-md);">👤 Profile</button>
+                <button class="btn btn-outline" onclick="logout()" style="border-color: white; color: white;">Logout</button>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Container -->
+    <div class="teacher-container">
+        <!-- Sidebar -->
+        <aside class="teacher-sidebar">
+            <h3>Filters</h3>
+            
+            <div class="filter-group">
+                <label>Verification Status</label>
+                <select id="statusFilter">
+                    <option value="all">All Students</option>
+                    <option value="pending">Pending</option>
+                    <option value="verified">Verified</option>
+                </select>
+            </div>
+
+            <div class="filter-group">
+                <label>Search Student</label>
+                <input type="text" id="searchInput" placeholder="Name or Email">
+            </div>
+
+            <div class="filter-group">
+                <label>Sort By</label>
+                <select id="sortFilter">
+                    <option value="name">Name (A-Z)</option>
+                    <option value="newest">Newest</option>
+                    <option value="oldest">Oldest</option>
+                </select>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="teacher-content">
+            <div class="content-header">
+                <h2>Student Profile Verification</h2>
+                <p style="margin: 0; color: var(--text-secondary);">Department: <strong id="deptName">Computer Science</strong></p>
+            </div>
+
+            <div class="students-grid" id="studentsContainer">
+                <!-- Student cards will be populated here -->
+            </div>
+        </main>
+    </div>
+
+    <!-- Modal for viewing profile -->
+    <div id="profileModal" class="modal" style="display: none;">
+        <div class="modal-content" style="max-width: 600px;">
+            <div class="modal-header">
+                <h3>Student Profile Details</h3>
+                <button class="modal-close" onclick="closeProfileModal()">&times;</button>
+            </div>
+            <div class="modal-body" id="profileModalBody">
+                <!-- Profile details will be populated here -->
+            </div>
+        </div>
+    </div>
+
+    <script src="js/main.js"></script>
+    <script>
+        // Mock student data
+        const mockStudents = [
+            {
+                id: 1,
+                name: "Aarav Kumar",
+                email: "aarav.kumar@college.edu",
+                rollNo: "CSE-2024-001",
+                department: "CSE",
+                status: "pending",
+                skills: ["Java", "Python", "SQL"],
+                resume: true,
+                certificates: ["AWS Certified"],
+                remarks: ""
+            },
+            {
+                id: 2,
+                name: "Priya Sharma",
+                email: "priya.sharma@college.edu",
+                rollNo: "CSE-2024-002",
+                department: "CSE",
+                status: "verified",
+                skills: ["C++", "Web Dev", "React"],
+                resume: true,
+                certificates: ["Oracle Java"],
+                remarks: "Excellent profile. All documents verified."
+            },
+            {
+                id: 3,
+                name: "Rajesh Singh",
+                email: "rajesh.singh@college.edu",
+                rollNo: "CSE-2024-003",
+                department: "CSE",
+                status: "pending",
+                skills: ["Python", "Django"],
+                resume: true,
+                certificates: [],
+                remarks: ""
+            }
+        ];
+
+        let allStudents = mockStudents;
+
+        function renderStudents() {
+            const container = document.getElementById('studentsContainer');
+            const statusFilter = document.getElementById('statusFilter').value;
+            const searchText = document.getElementById('searchInput').value.toLowerCase();
+            const sortBy = document.getElementById('sortFilter').value;
+
+            let filtered = allStudents.filter(s => {
+                const matchStatus = statusFilter === 'all' || s.status === statusFilter;
+                const matchSearch = s.name.toLowerCase().includes(searchText) || 
+                                   s.email.toLowerCase().includes(searchText);
+                return matchStatus && matchSearch;
+            });
+
+            if (sortBy === 'name') {
+                filtered.sort((a, b) => a.name.localeCompare(b.name));
+            } else if (sortBy === 'newest') {
+                filtered.reverse();
+            }
+
+            container.innerHTML = filtered.map(student => `
+                <div class="student-card">
+                    <div class="student-card-header">
+                        <div class="student-info">
+                            <h4>${student.name}</h4>
+                            <p class="student-meta">${student.rollNo} • ${student.email}</p>
+                        </div>
+                        <span class="status-badge status-${student.status}">
+                            ${student.status === 'pending' ? 'Pending' : 'Verified'}
+                        </span>
+                    </div>
+
+                    <div class="verification-items">
+                        <div class="verification-item">
+                            <label class="verification-item-label">Skills Verified</label>
+                            <input type="checkbox" class="verification-checkbox" ${student.skills.length > 0 ? 'checked' : ''} disabled>
+                        </div>
+                        <div class="verification-item">
+                            <label class="verification-item-label">Resume Submitted</label>
+                            <input type="checkbox" class="verification-checkbox" ${student.resume ? 'checked' : ''} disabled>
+                        </div>
+                        <div class="verification-item">
+                            <label class="verification-item-label">Certificates Verified</label>
+                            <input type="checkbox" class="verification-checkbox" ${student.certificates.length > 0 ? 'checked' : ''} disabled>
+                        </div>
+                    </div>
+
+                    <div class="remarks-section">
+                        <label>Remarks</label>
+                        <textarea placeholder="Add your remarks or comments here..." id="remarks-${student.id}">${student.remarks}</textarea>
+                    </div>
+
+                    <div class="action-buttons">
+                        <button class="btn-verify" onclick="verifyStudent(${student.id})">Mark as Verified</button>
+                        <button class="btn-needs-improvement" onclick="needsImprovement(${student.id})">Needs Improvement</button>
+                    </div>
+
+                    <p style="margin-top: var(--spacing-md); text-align: right;">
+                        <a href="profile.html?studentId=${student.id}" class="view-profile-link" target="_blank">View Full Profile →</a>
+                    </p>
+                </div>
+            `).join('');
+        }
+
+        function verifyStudent(id) {
+            const student = allStudents.find(s => s.id === id);
+            const remarks = document.getElementById(`remarks-${id}`).value;
+            
+            if (!remarks.trim()) {
+                Toast.error("Please add remarks before verifying.");
+                return;
+            }
+
+            student.status = 'verified';
+            student.remarks = remarks;
+            renderStudents();
+            Toast.success(`${student.name}'s profile marked as verified.`);
+        }
+
+        function needsImprovement(id) {
+            const student = allStudents.find(s => s.id === id);
+            const remarks = document.getElementById(`remarks-${id}`).value;
+
+            if (!remarks.trim()) {
+                Toast.error("Please add remarks about what needs improvement.");
+                return;
+            }
+
+            student.remarks = remarks;
+            renderStudents();
+            Toast.warning(`Feedback sent to ${student.name}.`);
+        }
+
+        function closeProfileModal() {
+            document.getElementById('profileModal').style.display = 'none';
+        }
+
+        function logout() {
+            SessionManager.logout();
+            window.location.href = 'login.html';
+        }
+
+        // Initialize
+        document.getElementById('statusFilter').addEventListener('change', renderStudents);
+        document.getElementById('searchInput').addEventListener('input', renderStudents);
+        document.getElementById('sortFilter').addEventListener('change', renderStudents);
+
+        window.addEventListener('load', () => {
+            const user = SessionManager.getCurrentUser();
+            if (!user) {
+                window.location.href = 'login.html';
+                return;
+            }
+            if (user.role !== 'teacher') {
+                Toast.error('Unauthorized access');
+                window.location.href = 'index.html';
+                return;
+            }
+            document.getElementById('teacherName').textContent = user.name || 'Teacher';
+            document.getElementById('deptName').textContent = user.department || 'Department';
+            renderStudents();
+        });
+    </script>
+</body>
+</html>
