@@ -1,150 +1,150 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { supabase } from '../lib/supabase';
 
 const AuthContext = createContext();
 
+const API = 'http://localhost:5000/api';
+const TOKEN_KEY = 'cnp_token';
+const PROFILE_KEY = 'cnp_profile';
+
+const saveLocal = (token, profile) => {
+  try {
+    localStorage.setItem(TOKEN_KEY, token);
+    localStorage.setItem(PROFILE_KEY, JSON.stringify(profile));
+  } catch (_) {}
+};
+
+const clearLocal = () => {
+  try {
+    localStorage.removeItem(TOKEN_KEY);
+    localStorage.removeItem(PROFILE_KEY);
+  } catch (_) {}
+};
+
+const loadLocal = () => {
+  try {
+    const token = localStorage.getItem(TOKEN_KEY);
+    const profile = JSON.parse(localStorage.getItem(PROFILE_KEY) || 'null');
+    return { token, profile };
+  } catch (_) {
+    return { token: null, profile: null };
+  }
+};
+
 export const AuthProvider = ({ children }) => {
-  const [user, setUser] = useState(null);
-  const [profile, setProfile] = useState(null);
-  const [session, setSession] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const cached = loadLocal();
+  const [token, setToken]     = useState(cached.token);
+  const [profile, setProfile] = useState(cached.profile);
+  const [loading, setLoading] = useState(!!cached.token); // only load if token exists
 
-  // Fetch profile from Supabase profiles table
-  const fetchProfile = async (userId) => {
-    try {
-      const { data, error } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('id', userId)
-        .single();
-
-      if (error) {
-        console.error('Error fetching profile:', error.message);
-        return null;
-      }
-      setProfile(data);
-      return data;
-    } catch (err) {
-      console.error('Profile fetch error:', err);
-      return null;
-    }
-  };
-
-  // Listen for auth state changes
+  // On mount: verify existing token is still valid
   useEffect(() => {
-    // Get initial session
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
-      setUser(session?.user ?? null);
-      if (session?.user) {
-        fetchProfile(session.user.id);
-      }
+    if (!cached.token) {
       setLoading(false);
-    });
+      return;
+    }
 
-    // Subscribe to auth changes
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
-        setSession(session);
-        setUser(session?.user ?? null);
-
-        if (event === 'SIGNED_IN' && session?.user) {
-          await fetchProfile(session.user.id);
-        }
-
-        if (event === 'SIGNED_OUT') {
+    // Verify token against server
+    fetch(`${API}/auth/me`, {
+      headers: { Authorization: `Bearer ${cached.token}` },
+    })
+      .then(r => r.json())
+      .then(data => {
+        if (data.profile) {
+          setProfile(data.profile);
+          saveLocal(cached.token, data.profile);
+        } else {
+          // Token expired or invalid
+          clearLocal();
+          setToken(null);
           setProfile(null);
         }
-      }
-    );
-
-    return () => subscription.unsubscribe();
+      })
+      .catch(() => {
+        // Server unreachable but token exists — keep cached profile so app doesn't break
+        console.warn('Server unreachable, using cached profile.');
+      })
+      .finally(() => setLoading(false));
   }, []);
 
-  // Sign up with email, password, name, and role
   const signUp = async (email, password, name, role = 'student', department = null) => {
-    setLoading(true);
-    const { data, error } = await supabase.auth.signUp({
-      email,
-      password,
-      options: {
-        data: {
-          name,
-          role,
-          department,
-        },
-      },
-    });
-    setLoading(false);
+    try {
+      const res = await fetch(`${API}/auth/signup`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password, name, role, department }),
+      });
+      const data = await res.json();
+      if (!res.ok) return { error: { message: data.error } };
 
-    if (error) return { error };
-
-    return { data, error: null };
-  };
-
-  // Sign in with email and password
-  const signIn = async (email, password) => {
-    setLoading(true);
-    const { data, error } = await supabase.auth.signInWithPassword({
-      email,
-      password,
-    });
-    setLoading(false);
-
-    if (error) return { error };
-
-    return { data, error: null };
-  };
-
-  // Sign out
-  const signOut = async () => {
-    setLoading(true);
-    const { error } = await supabase.auth.signOut();
-    setUser(null);
-    setProfile(null);
-    setSession(null);
-    setLoading(false);
-    return { error };
-  };
-
-  // Update user profile in profiles table
-  const updateProfile = async (updates) => {
-    if (!user) return { error: { message: 'Not authenticated' } };
-
-    const { data, error } = await supabase
-      .from('profiles')
-      .update({ ...updates, updated_at: new Date().toISOString() })
-      .eq('id', user.id)
-      .select()
-      .single();
-
-    if (!error && data) {
-      setProfile(data);
+      saveLocal(data.token, data.profile);
+      setToken(data.token);
+      setProfile(data.profile);
+      return { data, error: null };
+    } catch (err) {
+      return { error: { message: 'Cannot connect to server. Is the backend running?' } };
     }
-
-    return { data, error };
   };
 
-  // Convenience role checks
-  const isStudent = profile?.role === 'student';
-  const isTeacher = profile?.role === 'teacher';
-  const isHOD = profile?.role === 'hod';
-  const isAdmin = profile?.role === 'admin';
-  const isLoggedIn = !!user && !!session;
+  const signIn = async (email, password) => {
+    try {
+      const res = await fetch(`${API}/auth/login`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password }),
+      });
+      const data = await res.json();
+      if (!res.ok) return { error: { message: data.error } };
 
-  // For backward compatibility with existing components
-  const currentUser = profile ? {
-    email: profile.email,
-    name: profile.name,
-    role: profile.role,
-    department: profile.department,
-  } : null;
+      saveLocal(data.token, data.profile);
+      setToken(data.token);
+      setProfile(data.profile);
+      return { data, error: null };
+    } catch (err) {
+      return { error: { message: 'Cannot connect to server. Make sure the backend is running on port 5000.' } };
+    }
+  };
+
+  const signOut = () => {
+    clearLocal();
+    setToken(null);
+    setProfile(null);
+  };
+
+  const updateProfile = async (updates) => {
+    if (!token || !profile) return { error: { message: 'Not authenticated' } };
+    try {
+      const res = await fetch(`${API}/profiles/${profile.id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify(updates),
+      });
+      const data = await res.json();
+      if (!res.ok) return { error: { message: data.error } };
+
+      saveLocal(token, data.profile);
+      setProfile(data.profile);
+      return { data: data.profile, error: null };
+    } catch (err) {
+      return { error: { message: 'Server error.' } };
+    }
+  };
+
+  const isLoggedIn = !!token && !!profile;
+  const isStudent  = profile?.role === 'student';
+  const isTeacher  = profile?.role === 'teacher';
+  const isHOD      = profile?.role === 'hod';
+  const isAdmin    = profile?.role === 'admin';
+  const user       = profile ? { id: profile.id } : null;
+  const currentUser = profile;
 
   return (
     <AuthContext.Provider value={{
+      token,
       user,
       profile,
-      session,
       loading,
       currentUser,
       isLoggedIn,
@@ -156,7 +156,6 @@ export const AuthProvider = ({ children }) => {
       signIn,
       signOut,
       updateProfile,
-      fetchProfile,
     }}>
       {children}
     </AuthContext.Provider>

@@ -7,38 +7,39 @@
    ================== */
 
 :root {
-  /* Color Palette - Enhanced */
-  --primary: #1E3A8A;
-  --primary-light: #3B82F6;
-  --primary-dark: #0F1D3D;
-  --secondary: #4F46E5;
-  --secondary-light: #6366F1;
-  --accent: #38BDF8;
-  --accent-light: #7DD3FC;
-  --success: #10B981;
-  --success-light: #34D399;
-  --warning: #F59E0B;
-  --warning-light: #FBBF24;
-  --danger: #EF4444;
-  --danger-light: #F87171;
-  --info: #06B6D4;
-  --info-light: #22D3EE;
+  /* Color Palette - Strict Monochrome (Inverted Dark Theme) */
+  --primary: #FFFFFF;
+  --primary-light: #E5E5E5;
+  --primary-dark: #FFFFFF;
+  --secondary: #F3F4F6;
+  --secondary-light: #D1D5DB;
+  
+  --accent: #FFFFFF;
+  --accent-light: #E5E7EB;
+  
+  /* Replace standard UI colors with Grayscale for a fully monochrome look */
+  --success: #D1D5DB;
+  --success-light: #1F2937;
+  --warning: #9CA3AF;
+  --warning-light: #111827;
+  --danger: #E5E7EB;
+  --danger-light: #030712;
+  --info: #9CA3AF;
+  --info-light: #111827;
   
   /* Backgrounds */
-  --bg-light: #F8FAFC;
-  --bg-lighter: #F1F5F9;
-  --bg-white: #FFFFFF;
-  --bg-gray: #F1F5F9;
-  --bg-dark: #0F172A;
+  --bg-light: #050505;
+  --bg-white: #111111;
+  --bg-gray: #1A1A1A;
+  --navbar-bg: rgba(17, 17, 17, 0.95);
   
-  /* Text Colors */
-  --text-primary: #1F2933;
-  --text-secondary: #6B7280;
-  --text-muted: #9CA3AF;
-  --text-white: #FFFFFF;
+  /* Text */
+  --text-primary: #F9FAFB;
+  --text-secondary: #9CA3AF;
+  --text-muted: #6B7280;
   
   /* Borders */
-  --border-color: #E2E8F0;
+  --border-color: #333333;
   --border-color-light: #F1F5F9;
   --border-radius: 12px;
   --border-radius-lg: 16px;
@@ -61,8 +62,8 @@
   --spacing-2xl: 48px;
   
   /* Typography - Enhanced */
-  --font-primary: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-  --font-secondary: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-primary: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  --font-secondary: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
   --font-size-xs: 12px;
   --font-size-sm: 14px;
   --font-size-base: 16px;
@@ -72,15 +73,26 @@
   --font-size-3xl: 40px;
   --font-size-4xl: 48px;
   
-  /* Transitions */
-  --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  --transition-fast: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
-  --transition-slow: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+  /* Transitions - Disabled */
+  --transition: none;
+  --transition-fast: none;
+  --transition-slow: none;
   
   /* Blur values for glassmorphism */
   --blur-sm: blur(4px);
   --blur-md: blur(10px);
-  --blur-lg: blur(16px);
+}
+
+/* ==================
+   Animations (Disabled)
+   ================== */
+
+.animate-slide-up {
+  /* Animations removed per user request */
+}
+
+.animate-fade-in {
+  /* Animations removed per user request */
 }
 
 /* ==================
@@ -103,6 +115,19 @@ body {
   background-color: var(--bg-light);
   line-height: 1.6;
   font-size: var(--font-size-base);
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+/* ==================
+   Hover Animations (Disabled)
+   ================== */
+
+.hover-scale {
+  /* Hover animations removed */
+}
+
+.hover-scale:hover {
+  /* Hover animations removed */
 }
 
 /* ==================
@@ -214,45 +239,41 @@ a:hover {
 /* Button Variants */
 
 .btn-primary {
-  background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
-  color: white;
-  box-shadow: var(--shadow-lg);
+  background-color: var(--primary);
+  color: var(--bg-white);
+  box-shadow: var(--shadow-sm);
 }
 
 .btn-primary:hover:not(:disabled) {
-  transform: translateY(-3px);
-  box-shadow: var(--shadow-xl);
-  background: linear-gradient(135deg, var(--primary-dark) 0%, var(--secondary-light) 100%);
+  background-color: var(--primary-light);
+  color: var(--bg-white);
 }
 
 .btn-primary:active:not(:disabled) {
-  transform: translateY(-1px);
 }
 
 .btn-secondary {
-  background: linear-gradient(135deg, var(--secondary) 0%, var(--secondary-light) 100%);
-  color: white;
-  box-shadow: var(--shadow-md);
+  background-color: var(--secondary);
+  color: var(--bg-white);
+  box-shadow: var(--shadow-sm);
 }
 
 .btn-secondary:hover:not(:disabled) {
-  transform: translateY(-2px);
-  box-shadow: var(--shadow-lg);
+  background-color: var(--secondary-light);
+  color: var(--bg-white);
 }
 
 .btn-outline {
   background-color: transparent;
   color: var(--primary);
-  border: 2px solid var(--primary);
+  border: 1px solid var(--primary);
   font-weight: 600;
 }
 
 .btn-outline:hover:not(:disabled) {
-  background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
-  color: white;
-  border-color: transparent;
-  transform: translateY(-2px);
-  box-shadow: var(--shadow-lg);
+  background-color: var(--primary);
+  color: var(--bg-white);
+  border-color: var(--primary);
 }
 
 .btn-ghost {
@@ -265,30 +286,26 @@ a:hover {
 .btn-ghost:hover:not(:disabled) {
   background-color: rgba(79, 70, 229, 0.15);
   border-color: var(--secondary);
-  transform: translateY(-2px);
-  box-shadow: var(--shadow-md);
 }
 
 .btn-success {
-  background: linear-gradient(135deg, var(--success) 0%, var(--success-light) 100%);
+  background-color: var(--success);
   color: white;
-  box-shadow: var(--shadow-md);
+  box-shadow: var(--shadow-sm);
 }
 
 .btn-success:hover:not(:disabled) {
-  transform: translateY(-2px);
-  box-shadow: var(--shadow-lg);
+  background-color: #059669;
 }
 
 .btn-danger {
-  background: linear-gradient(135deg, var(--danger) 0%, var(--danger-light) 100%);
+  background-color: var(--danger);
   color: white;
-  box-shadow: var(--shadow-md);
+  box-shadow: var(--shadow-sm);
 }
 
 .btn-danger:hover:not(:disabled) {
-  transform: translateY(-2px);
-  box-shadow: var(--shadow-lg);
+  background-color: #DC2626;
 }
 
 .btn-sm {
@@ -327,7 +344,7 @@ select {
   font-family: var(--font-primary);
   font-size: var(--font-size-base);
   color: var(--text-primary);
-  background: rgba(255, 255, 255, 0.8);
+  background: var(--bg-gray);
   backdrop-filter: var(--blur-sm);
   transition: var(--transition-fast);
   margin-bottom: var(--spacing-sm);
@@ -345,7 +362,7 @@ select:focus {
   outline: none;
   border-color: var(--secondary);
   box-shadow: 0 0 0 4px rgba(79, 70, 229, 0.15);
-  background: rgba(255, 255, 255, 1);
+  background: var(--bg-white);
   transform: translateY(-2px);
 }
 
@@ -406,37 +423,24 @@ label {
 }
 
 /* ==================
-   Cards - Modern Glassmorphism
+   Cards - Minimal SaaS
    ================== */
 
 .card {
-  background: rgba(255, 255, 255, 0.8);
-  backdrop-filter: var(--blur-md);
-  border: 1px solid rgba(255, 255, 255, 0.6);
+  background-color: var(--bg-white);
+  border: 1px solid var(--border-color);
   border-radius: var(--border-radius-lg);
   padding: var(--spacing-lg);
-  box-shadow: var(--shadow-md);
-  transition: var(--transition);
+  box-shadow: var(--shadow-sm);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
   position: relative;
   overflow: hidden;
 }
 
-.card::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: linear-gradient(135deg, rgba(79, 70, 229, 0.05) 0%, transparent 100%);
-  pointer-events: none;
-}
-
 .card:hover {
-  box-shadow: var(--shadow-lg);
-  transform: translateY(-8px);
-  border-color: rgba(79, 70, 229, 0.2);
-  background: rgba(255, 255, 255, 0.9);
+  box-shadow: var(--shadow-md);
+  border-color: var(--border-color);
+  transform: translateY(-2px);
 }
 
 .card-header {
@@ -444,7 +448,7 @@ label {
   align-items: center;
   justify-content: space-between;
   padding-bottom: var(--spacing-md);
-  border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+  border-bottom: 1px solid var(--border-color);
   margin-bottom: var(--spacing-md);
   position: relative;
   z-index: 1;
@@ -454,10 +458,7 @@ label {
   font-size: var(--font-size-lg);
   font-weight: 600;
   margin: 0;
-  background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
+  color: var(--text-primary);
 }
 
 .card-body {
@@ -468,7 +469,7 @@ label {
 
 .card-footer {
   padding-top: var(--spacing-md);
-  border-top: 1px solid rgba(0, 0, 0, 0.05);
+  border-top: 1px solid var(--border-color);
   margin-top: var(--spacing-md);
   position: relative;
   z-index: 1;
@@ -491,39 +492,39 @@ label {
 }
 
 .badge-primary {
-  background: linear-gradient(135deg, rgba(30, 58, 138, 0.2) 0%, rgba(30, 58, 138, 0.1) 100%);
-  color: var(--primary);
-  border: 1px solid rgba(30, 58, 138, 0.3);
+  background-color: var(--bg-gray);
+  color: var(--text-primary);
+  border: 1px solid var(--border-color);
 }
 
 .badge-secondary {
-  background: linear-gradient(135deg, rgba(79, 70, 229, 0.2) 0%, rgba(79, 70, 229, 0.1) 100%);
-  color: var(--secondary);
-  border: 1px solid rgba(79, 70, 229, 0.3);
+  background-color: var(--bg-light);
+  color: var(--text-secondary);
+  border: 1px dashed var(--border-color);
 }
 
 .badge-success {
-  background: linear-gradient(135deg, rgba(16, 185, 129, 0.2) 0%, rgba(16, 185, 129, 0.1) 100%);
-  color: var(--success);
-  border: 1px solid rgba(16, 185, 129, 0.3);
+  background-color: var(--bg-gray);
+  color: var(--text-primary);
+  border: 1px solid var(--primary);
 }
 
 .badge-warning {
-  background: linear-gradient(135deg, rgba(245, 158, 11, 0.2) 0%, rgba(245, 158, 11, 0.1) 100%);
-  color: var(--warning);
-  border: 1px solid rgba(245, 158, 11, 0.3);
+  background-color: var(--bg-light);
+  color: var(--text-primary);
+  border: 1px dashed var(--primary);
 }
 
 .badge-danger {
-  background: linear-gradient(135deg, rgba(239, 68, 68, 0.2) 0%, rgba(239, 68, 68, 0.1) 100%);
-  color: var(--danger);
-  border: 1px solid rgba(239, 68, 68, 0.3);
+  background-color: var(--primary);
+  color: var(--bg-white);
+  border: 1px solid var(--primary);
 }
 
 .badge-info {
-  background: linear-gradient(135deg, rgba(6, 182, 212, 0.2) 0%, rgba(6, 182, 212, 0.1) 100%);
-  color: var(--info);
-  border: 1px solid rgba(6, 182, 212, 0.3);
+  background-color: var(--bg-gray);
+  color: var(--text-secondary);
+  border: 1px dotted var(--border-color);
 }
 
 .tag {
@@ -531,19 +532,18 @@ label {
   align-items: center;
   gap: var(--spacing-xs);
   padding: var(--spacing-xs) var(--spacing-md);
-  background: linear-gradient(135deg, var(--secondary) 0%, var(--secondary-light) 100%);
-  color: white;
+  background-color: var(--bg-gray);
+  color: var(--text-primary);
   border-radius: 20px;
   font-size: var(--font-size-sm);
   margin: var(--spacing-xs);
   cursor: pointer;
   transition: var(--transition-fast);
-  box-shadow: var(--shadow-md);
+  border: 1px solid var(--border-color);
 }
 
 .tag:hover {
-  transform: translateY(-3px);
-  box-shadow: var(--shadow-lg);
+  background-color: var(--border-color);
 }
 
 /* ==================
@@ -569,9 +569,9 @@ label {
 }
 
 .navbar {
-  background: rgba(255, 255, 255, 0.95);
+  background: var(--navbar-bg);
   backdrop-filter: var(--blur-md);
-  border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+  border-bottom: 1px solid var(--border-color);
   box-shadow: var(--shadow-sm);
   position: sticky;
   top: 0;
@@ -590,10 +590,7 @@ label {
 .navbar-brand {
   font-size: var(--font-size-lg);
   font-weight: 700;
-  background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
+  color: var(--primary);
   text-decoration: none;
   display: flex;
   align-items: center;
@@ -799,7 +796,7 @@ label {
 
 .progress-bar-fill {
   height: 100%;
-  background: linear-gradient(90deg, var(--secondary), var(--accent));
+  background-color: var(--primary);
   transition: width 0.3s ease;
   border-radius: 20px;
 }

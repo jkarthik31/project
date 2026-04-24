@@ -1,173 +1,192 @@
 import React, { createContext, useContext } from 'react';
-import { supabase } from '../lib/supabase';
+import { useAuth } from './AuthContext';
 
 const DataContext = createContext();
 
+const API = 'http://localhost:5000/api';
+
+const apiFetch = async (path, token, options = {}) => {
+  const res = await fetch(`${API}${path}`, {
+    ...options,
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${token}`,
+      ...(options.headers || {}),
+    },
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.error || 'API error');
+  return data;
+};
+
 export const DataProvider = ({ children }) => {
+  const { token } = useAuth();
 
   // ========================
   // JOBS
   // ========================
-
-  const getJobs = async (status = 'active') => {
-    const { data, error } = await supabase
-      .from('jobs')
-      .select('*')
-      .eq('status', status)
-      .order('created_at', { ascending: false });
-
-    if (error) { console.error('Error fetching jobs:', error); return []; }
-    return data;
+  const getJobs = async (status) => {
+    try {
+      const url = status ? `/jobs?status=${status}` : '/jobs';
+      const data = await apiFetch(url, token);
+      return data.jobs || [];
+    } catch (err) { console.error(err); return []; }
   };
 
   const getJobById = async (id) => {
-    const { data, error } = await supabase
-      .from('jobs')
-      .select('*')
-      .eq('id', id)
-      .single();
-
-    if (error) { console.error('Error fetching job:', error); return null; }
-    return data;
+    try {
+      const data = await apiFetch(`/jobs/${id}`, token);
+      return data.job;
+    } catch (err) { console.error(err); return null; }
   };
 
-  const createJob = async (job) => {
-    const { data, error } = await supabase
-      .from('jobs')
-      .insert(job)
-      .select()
-      .single();
-
-    return { data, error };
+  const createJob = async (jobData) => {
+    try {
+      const data = await apiFetch('/jobs', token, {
+        method: 'POST',
+        body: JSON.stringify(jobData),
+      });
+      return { data: data.job, error: null };
+    } catch (err) { return { data: null, error: { message: err.message } }; }
   };
 
-  const updateJob = async (id, updates) => {
-    const { data, error } = await supabase
-      .from('jobs')
-      .update({ ...updates, updated_at: new Date().toISOString() })
-      .eq('id', id)
-      .select()
-      .single();
+  const updateJob = async (id, jobData) => {
+    try {
+      const data = await apiFetch(`/jobs/${id}`, token, {
+        method: 'PUT',
+        body: JSON.stringify(jobData),
+      });
+      return { data: data.job, error: null };
+    } catch (err) { return { data: null, error: { message: err.message } }; }
+  };
 
-    return { data, error };
+  const deleteJob = async (id) => {
+    try {
+      await apiFetch(`/jobs/${id}`, token, { method: 'DELETE' });
+      return { error: null };
+    } catch (err) { return { error: { message: err.message } }; }
+  };
+
+  // ========================
+  // SAVED JOBS
+  // ========================
+  const getSavedJobs = async () => {
+    try {
+      const data = await apiFetch('/jobs/saved/list', token);
+      return data.saved_jobs || [];
+    } catch (err) { console.error(err); return []; }
+  };
+
+  const saveJob = async (jobId) => {
+    try {
+      await apiFetch(`/jobs/${jobId}/save`, token, { method: 'POST' });
+      return { error: null };
+    } catch (err) { return { error: { message: err.message } }; }
+  };
+
+  const unsaveJob = async (jobId) => {
+    try {
+      await apiFetch(`/jobs/${jobId}/save`, token, { method: 'DELETE' });
+      return { error: null };
+    } catch (err) { return { error: { message: err.message } }; }
   };
 
   // ========================
   // APPLICATIONS
   // ========================
-
   const getApplications = async (studentId) => {
-    const query = supabase
-      .from('applications')
-      .select(`
-        *,
-        jobs:job_id (
-          title,
-          company,
-          position,
-          location,
-          deadline
-        )
-      `)
-      .order('applied_at', { ascending: false });
-
-    if (studentId) {
-      query.eq('student_id', studentId);
-    }
-
-    const { data, error } = await query;
-    if (error) { console.error('Error fetching applications:', error); return []; }
-    return data;
+    try {
+      const url = studentId ? `/applications?student_id=${studentId}` : '/applications';
+      const data = await apiFetch(url, token);
+      // Normalize to match old Supabase shape (jobs nested)
+      return (data.applications || []).map(a => ({
+        ...a,
+        jobs: { company: a.company, position: a.position, title: a.job_title, location: a.location, deadline: a.deadline },
+      }));
+    } catch (err) { console.error(err); return []; }
   };
 
   const addApplication = async (studentId, jobId) => {
-    const { data, error } = await supabase
-      .from('applications')
-      .insert({
-        student_id: studentId,
-        job_id: jobId,
-        status: 'applied',
-      })
-      .select()
-      .single();
-
-    return { data, error };
+    try {
+      const data = await apiFetch('/applications', token, {
+        method: 'POST',
+        body: JSON.stringify({ job_id: jobId }),
+      });
+      return { data: data.application, error: null };
+    } catch (err) { return { data: null, error: { message: err.message } }; }
   };
 
-  const updateApplicationStatus = async (applicationId, status) => {
-    const { data, error } = await supabase
-      .from('applications')
-      .update({ status, updated_at: new Date().toISOString() })
-      .eq('id', applicationId)
-      .select()
-      .single();
-
-    return { data, error };
+  const updateApplicationStatus = async (appId, status) => {
+    try {
+      await apiFetch(`/applications/${appId}/status`, token, {
+        method: 'PATCH',
+        body: JSON.stringify({ status })
+      });
+      return { error: null };
+    } catch (err) { return { error: { message: err.message } }; }
   };
 
   // ========================
-  // PROFILES (read helpers)
+  // PROFILES (admin)
   // ========================
+  const getAllProfiles = async () => {
+    try {
+      const data = await apiFetch('/profiles', token);
+      return data.profiles || [];
+    } catch (err) { console.error(err); return []; }
+  };
 
   const getProfilesByRole = async (role) => {
-    const { data, error } = await supabase
-      .from('profiles')
-      .select('*')
-      .eq('role', role)
-      .order('created_at', { ascending: false });
-
-    if (error) { console.error('Error fetching profiles:', error); return []; }
-    return data;
+    try {
+      const profiles = await getAllProfiles();
+      return profiles.filter(p => p.role === role);
+    } catch (err) { return []; }
   };
 
-  const getProfilesByDepartment = async (department) => {
-    const { data, error } = await supabase
-      .from('profiles')
-      .select('*')
-      .eq('department', department)
-      .order('created_at', { ascending: false });
+  const getProfilesByDepartment = async (dept) => {
+    try {
+      const profiles = await getAllProfiles();
+      return profiles.filter(p => p.department === dept);
+    } catch (err) { return []; }
+  };
 
-    if (error) { console.error('Error fetching department profiles:', error); return []; }
-    return data;
+  const updateProfileRole = async (userId, newRole) => {
+    try {
+      await apiFetch(`/profiles/${userId}/role`, token, {
+        method: 'PATCH',
+        body: JSON.stringify({ role: newRole }),
+      });
+      return { error: null };
+    } catch (err) { return { error: { message: err.message } }; }
   };
 
   // ========================
-  // STATS (dashboard counters)
+  // STATS
   // ========================
-
   const getDashboardStats = async () => {
-    const [
-      { count: totalStudents },
-      { count: totalJobs },
-      { count: totalApplications },
-    ] = await Promise.all([
-      supabase.from('profiles').select('*', { count: 'exact', head: true }).eq('role', 'student'),
-      supabase.from('jobs').select('*', { count: 'exact', head: true }).eq('status', 'active'),
-      supabase.from('applications').select('*', { count: 'exact', head: true }),
-    ]);
-
-    return {
-      totalStudents: totalStudents || 0,
-      totalJobs: totalJobs || 0,
-      totalApplications: totalApplications || 0,
-    };
+    try {
+      const data = await apiFetch('/stats', token);
+      return data;
+    } catch (err) { return { totalStudents: 0, totalJobs: 0, totalApplications: 0 }; }
   };
 
   return (
     <DataContext.Provider value={{
-      // Jobs
       getJobs,
       getJobById,
       createJob,
       updateJob,
-      // Applications
+      deleteJob,
+      getSavedJobs,
+      saveJob,
+      unsaveJob,
       getApplications,
       addApplication,
       updateApplicationStatus,
-      // Profiles
       getProfilesByRole,
       getProfilesByDepartment,
-      // Stats
+      getAllProfiles,
+      updateProfileRole,
       getDashboardStats,
     }}>
       {children}

@@ -14,6 +14,12 @@ create table if not exists public.profiles (
   department text,
   phone text,
   avatar_url text,
+  cgpa numeric,
+  skills text,
+  resume_url text,
+  portfolio_url text,
+  github_url text,
+  linkedin_url text,
   profile_completion integer default 20,
   created_at timestamptz default now(),
   updated_at timestamptz default now()
