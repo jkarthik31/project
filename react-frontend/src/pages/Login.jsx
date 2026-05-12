@@ -14,7 +14,7 @@ const Login = () => {
   const [success, setSuccess] = useState('');
   const [isLoading, setIsLoading] = useState(false);
 
-  const { signIn, signUp, isLoggedIn, profile } = useAuth();
+  const { signIn, signUp, isLoggedIn, profile, isPending, isRejected } = useAuth();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const roleFromUrl = searchParams.get('role') || 'student';
@@ -33,27 +33,43 @@ const Login = () => {
           setIsLoading(false);
           return;
         }
-        const { error: signUpError } = await signUp(email, password, name, roleFromUrl, department || null);
+        // Require department for student, teacher, and HOD signups
+        if (['student', 'teacher', 'hod'].includes(roleFromUrl) && !department) {
+          setError('Please select your department.');
+          setIsLoading(false);
+          return;
+        }
+        const { data, error: signUpError } = await signUp(email, password, name, roleFromUrl, department || null);
         if (signUpError) {
           setError(signUpError.message);
           setIsLoading(false);
         } else {
-          setSuccess('Account created! Check your email to confirm, then log in.');
-          setIsSignUp(false);
-          setPassword('');
-          setIsLoading(false);
+          // Check if the new account is pending approval
+          const approvalStatus = data?.profile?.approval_status;
+          if (approvalStatus === 'pending') {
+            setSuccess('Account created! Your account is awaiting approval from your administrator.');
+            setIsLoading(false);
+            // Navigate to pending page after a brief delay
+            setTimeout(() => navigate('/pending'), 1500);
+          } else {
+            setSuccess('Account created successfully!');
+            setIsLoading(false);
+          }
         }
       } else {
         // Sign In
         const { error: signInError } = await signIn(email, password);
         if (signInError) {
-          setError(signInError.message);
+          if (signInError.approval_status === 'rejected') {
+            setError(`Account rejected. ${signInError.rejection_reason ? `Reason: ${signInError.rejection_reason}` : 'Please contact the administrator.'}`);
+          } else {
+            setError(signInError.message);
+          }
           setIsLoading(false);
         }
-        // If successful, we don't set loading false. 
-        // We wait for the AuthContext to update and the useEffect below to redirect.
+        // If successful, the useEffect below handles redirect
       }
-    } catch (err) {
+    } catch {
       setError('An unexpected error occurred. Please try again.');
       setIsLoading(false);
     }
@@ -62,6 +78,12 @@ const Login = () => {
   // Auto-redirect once logged in and profile is loaded
   React.useEffect(() => {
     if (isLoggedIn && profile) {
+      // Check approval status before redirecting to dashboard
+      if (isPending || isRejected) {
+        navigate('/pending');
+        return;
+      }
+
       switch (profile.role) {
         case 'admin': navigate('/admin'); break;
         case 'hod': navigate('/hod'); break;
@@ -69,7 +91,7 @@ const Login = () => {
         default: navigate('/dashboard');
       }
     }
-  }, [isLoggedIn, profile, navigate]);
+  }, [isLoggedIn, profile, isPending, isRejected, navigate]);
 
 
   return (
@@ -95,6 +117,25 @@ const Login = () => {
             <p className="login-subtitle">
               {isSignUp ? 'Join Campus Nexus Placement Portal' : 'Sign in to your account'}
             </p>
+
+            {/* Approval notice for signup */}
+            {isSignUp && roleFromUrl !== 'admin' && (
+              <div style={{
+                background: 'rgba(245, 158, 11, 0.08)',
+                border: '1px solid rgba(245, 158, 11, 0.25)',
+                borderRadius: 'var(--border-radius)',
+                padding: 'var(--spacing-sm) var(--spacing-md)',
+                marginBottom: 'var(--spacing-md)',
+                fontSize: 'var(--font-size-xs)',
+                color: 'var(--warning)',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '6px',
+              }}>
+                <span>⏳</span>
+                <span>New accounts require approval before access is granted.</span>
+              </div>
+            )}
 
             {/* Error / Success Messages */}
             {error && (
@@ -145,17 +186,17 @@ const Login = () => {
                 />
               </div>
 
-              {isSignUp && (roleFromUrl === 'teacher' || roleFromUrl === 'hod') && (
+              {/* Department selector — shown during signup for student, teacher, and HOD */}
+              {isSignUp && ['student', 'teacher', 'hod'].includes(roleFromUrl) && (
                 <div className="form-group">
                   <label>Department</label>
                   <select value={department} onChange={e => setDepartment(e.target.value)} required>
                     <option value="">Select Department</option>
-                    <option value="Computer Science">Computer Science</option>
-                    <option value="Electronics">Electronics</option>
-                    <option value="Mechanical">Mechanical</option>
-                    <option value="Civil">Civil</option>
-                    <option value="Electrical">Electrical</option>
-                    <option value="Information Technology">Information Technology</option>
+                    <option value="BCA">BCA</option>
+                    <option value="BCOM">BCOM</option>
+                    <option value="BBA">BBA</option>
+                    <option value="BSC">BSC</option>
+                    <option value="BA">BA</option>
                   </select>
                 </div>
               )}

@@ -10,10 +10,11 @@ const Jobs = () => {
   
   const [jobs, setJobs] = useState([]);
   const [applications, setApplications] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [filterType, setFilterType] = useState('All');
   const [filterLocation, setFilterLocation] = useState('All');
+  const [filterDept, setFilterDept] = useState('All');
   const [packageRange, setPackageRange] = useState(50);
   
   // Track applying state for individual jobs
@@ -82,8 +83,16 @@ const Jobs = () => {
            matchesPackage = packageVal <= packageRange;
        }
     }
+    // department filter (admin/hod/teacher)
+    let matchesDept = true;
+    if (filterDept !== 'All' && job.allowed_departments) {
+      const depts = job.allowed_departments.split(',').map(d => d.trim().toUpperCase());
+      matchesDept = depts.includes(filterDept);
+    } else if (filterDept !== 'All' && !job.allowed_departments) {
+      matchesDept = true; // jobs with no dept restriction show for all
+    }
     
-    return matchesSearch && matchesLocation && matchesType && matchesPackage;
+    return matchesSearch && matchesLocation && matchesType && matchesPackage && matchesDept;
   });
 
   if (authLoading && !profile) {
@@ -96,7 +105,12 @@ const Jobs = () => {
 
   return (
     <div style={{ padding: '100px 20px 40px', maxWidth: '1200px', margin: '0 auto', background: 'var(--bg-light)' }}>
-      <h1 style={{ marginBottom: 'var(--spacing-lg)' }}>Browse Job Opportunities</h1>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--spacing-md)', marginBottom: 'var(--spacing-lg)' }}>
+        <h1 style={{ margin: 0 }}>Browse Job Opportunities</h1>
+        {profile?.department && (
+          <span style={{ background: 'linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%)', color: '#fff', padding: '4px 14px', borderRadius: '20px', fontSize: 'var(--font-size-xs)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em' }}>{profile.department}</span>
+        )}
+      </div>
       
       {/* Search and Filter */}
       <div className="jobs-header" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 'var(--spacing-xl)', flexWrap: 'wrap', gap: 'var(--spacing-md)', paddingBottom: 'var(--spacing-lg)', borderBottom: '2px solid rgba(0, 0, 0, 0.05)' }}>
@@ -140,6 +154,19 @@ const Jobs = () => {
                 ))}
             </div>
 
+            {/* Department Filter — only visible to non-students (students are auto-filtered) */}
+            {profile?.role !== 'student' && (
+            <div style={{ marginBottom: 'var(--spacing-lg)', paddingBottom: 'var(--spacing-lg)', borderBottom: '1px solid rgba(0,0,0,0.05)' }}>
+                <h4 style={{ fontWeight: 700, marginBottom: 'var(--spacing-md)', color: 'var(--primary)', textTransform: 'uppercase', fontSize: 'var(--font-size-sm)' }}>Department</h4>
+                {['All', 'BCA', 'BSC', 'BCOM', 'BBA', 'BA'].map(d => (
+                  <label key={d} style={{ display: 'flex', alignItems: 'center', gap: 'var(--spacing-sm)', marginBottom: 'var(--spacing-sm)', cursor: 'pointer', fontWeight: 'normal', textTransform: 'none' }}>
+                    <input type="radio" name="department" checked={filterDept === d} onChange={() => setFilterDept(d)} />
+                    {d}
+                  </label>
+                ))}
+            </div>
+            )}
+
             <div style={{ marginBottom: 'var(--spacing-lg)' }}>
                 <h4 style={{ fontWeight: 700, marginBottom: 'var(--spacing-md)', color: 'var(--primary)', textTransform: 'uppercase', fontSize: 'var(--font-size-sm)' }}>Package up to</h4>
                 <div style={{ padding: 'var(--spacing-md)', background: 'linear-gradient(135deg, rgba(79, 70, 229, 0.05) 0%, rgba(79, 70, 229, 0.02) 100%)', borderRadius: 'var(--border-radius-lg)', border: '1px solid rgba(79, 70, 229, 0.1)' }}>
@@ -151,7 +178,7 @@ const Jobs = () => {
                 </div>
             </div>
 
-            <button className="btn btn-outline btn-block" onClick={() => { setSearchTerm(''); setFilterType('All'); setFilterLocation('All'); setPackageRange(50); }}>Clear All Filters</button>
+            <button className="btn btn-outline btn-block" onClick={() => { setSearchTerm(''); setFilterType('All'); setFilterLocation('All'); setFilterDept('All'); setPackageRange(50); }}>Clear All Filters</button>
         </div>
 
         {/* Jobs List */}
@@ -187,8 +214,26 @@ const Jobs = () => {
                                   {job.title}
                               </h3>
                           </div>
+                      <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', alignItems: 'center' }}>
                           <span className="badge badge-success">OPEN</span>
+                          {profile?.role === 'student' && (
+                            job.is_eligible === false
+                              ? <span className="badge badge-danger">✗ Not Eligible</span>
+                              : job.is_eligible === true
+                                ? <span className="badge badge-success">✓ Eligible</span>
+                                : null
+                          )}
                       </div>
+                      </div>
+
+                      {/* Department Tags */}
+                      {job.allowed_departments && job.allowed_departments.trim() !== '' && (
+                        <div style={{ display: 'flex', gap: '4px', flexWrap: 'wrap', marginBottom: 'var(--spacing-sm)' }}>
+                          {job.allowed_departments.split(',').map(d => d.trim()).filter(Boolean).map(d => (
+                            <span key={d} style={{ background: 'rgba(99,102,241,0.1)', color: 'var(--primary)', padding: '2px 8px', borderRadius: '4px', fontSize: '0.7rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.03em' }}>{d}</span>
+                          ))}
+                        </div>
+                      )}
 
                       <div style={{ display: 'flex', flexWrap: 'wrap', gap: 'var(--spacing-md)', marginBottom: 'var(--spacing-md)', fontSize: 'var(--font-size-sm)', color: 'var(--text-secondary)' }}>
                           <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--spacing-xs)' }}>Location: {job.location || 'Remote'}</div>
@@ -196,9 +241,29 @@ const Jobs = () => {
                           <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--spacing-xs)' }}>Deadline: {new Date(job.deadline).toLocaleDateString()}</div>
                       </div>
 
-                      <p style={{ color: 'var(--text-secondary)', marginBottom: 'var(--spacing-md)', lineHeight: 1.7 }}>
+                      <p style={{ color: 'var(--text-secondary)', marginBottom: 'var(--spacing-sm)', lineHeight: 1.7 }}>
                           {job.description || 'No description provided.'}
                       </p>
+
+                      {/* Ineligibility reasons */}
+                      {profile?.role === 'student' && job.ineligibility_reasons?.length > 0 && (
+                        <div style={{ background: 'var(--danger-light)', border: '1px solid var(--danger)', borderRadius: 'var(--border-radius)', padding: 'var(--spacing-sm) var(--spacing-md)', marginBottom: 'var(--spacing-md)', fontSize: 'var(--font-size-sm)', color: '#991B1B' }}>
+                          <strong>Why you're not eligible:</strong>
+                          <ul style={{ margin: '4px 0 0', paddingLeft: '18px' }}>
+                            {job.ineligibility_reasons.map((r, i) => <li key={i}>{r}</li>)}
+                          </ul>
+                        </div>
+                      )}
+
+                      {/* Missing skills */}
+                      {profile?.role === 'student' && job.missing_skills?.length > 0 && (
+                        <div style={{ marginBottom: 'var(--spacing-md)', display: 'flex', gap: '6px', flexWrap: 'wrap', alignItems: 'center' }}>
+                          <span style={{ fontSize: 'var(--font-size-xs)', color: 'var(--text-muted)', fontWeight: 600 }}>Missing skills:</span>
+                          {job.missing_skills.map(s => (
+                            <span key={s} style={{ background: 'var(--warning-light)', color: '#92400E', borderRadius: '4px', padding: '2px 8px', fontSize: '11px', fontWeight: 600 }}>{s}</span>
+                          ))}
+                        </div>
+                      )}
 
                       <div style={{ background: 'linear-gradient(135deg, rgba(79, 70, 229, 0.05) 0%, rgba(79, 70, 229, 0.02) 100%)', padding: 'var(--spacing-md)', borderRadius: 'var(--border-radius-lg)', marginBottom: 'var(--spacing-md)', border: '1px solid rgba(79, 70, 229, 0.1)' }}>
                           <div style={{ fontWeight: 700, marginBottom: 'var(--spacing-sm)', fontSize: 'var(--font-size-sm)', color: 'var(--secondary)', textTransform: 'uppercase' }}>Requirements</div>
@@ -212,7 +277,7 @@ const Jobs = () => {
                           </div>
                           <div style={{ display: 'flex', gap: 'var(--spacing-md)' }}>
                               <button 
-                                className={`btn ${applied ? 'btn-secondary' : 'btn-primary'}`} 
+                                className={`btn ${applied ? 'btn-secondary' : 'btn-accent'}`} 
                                 onClick={() => handleApply(job.id)}
                                 disabled={applied || isApplying}
                                 style={applied ? { opacity: 0.8, cursor: 'default' } : {}}

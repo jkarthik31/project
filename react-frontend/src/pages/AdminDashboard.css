@@ -1,4 +1,4 @@
-/* Admin Dashboard Styles - Scoped */
+/* Admin Dashboard Styles - College Portal Theme */
 .admin-dashboard-container {
   display: flex;
   min-height: calc(100vh - 70px);
@@ -8,12 +8,13 @@
 
 .admin-sidebar {
   width: 250px;
-  background-color: var(--secondary);
+  background-color: var(--primary);
   color: var(--bg-white);
   padding: var(--spacing-lg) 0;
-  box-shadow: var(--shadow-sm);
+  box-shadow: var(--shadow-md);
   display: flex;
   flex-direction: column;
+  z-index: 10;
 }
 
 .admin-menu {
@@ -32,13 +33,13 @@
   align-items: center;
   gap: var(--spacing-md);
   padding: var(--spacing-md) var(--spacing-lg);
-  color: rgba(255, 255, 255, 0.8);
+  color: rgba(255, 255, 255, 0.85);
   background: transparent;
   border: none;
-  border-radius: var(--border-radius-lg);
+  border-radius: var(--border-radius);
   transition: var(--transition-fast);
   cursor: pointer;
-  font-size: var(--font-size-base);
+  font-size: var(--font-size-sm);
   font-weight: 500;
   text-align: left;
 }
@@ -79,13 +80,15 @@
   padding: var(--spacing-lg);
   border-radius: var(--border-radius-lg);
   box-shadow: var(--shadow-sm);
+  border: 1px solid var(--border-color);
   border-left: 4px solid var(--primary);
-  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  transition: var(--transition-fast);
 }
 
 .admin-stat-card:hover {
-  transform: translateY(-5px);
+  transform: translateY(-4px);
   box-shadow: var(--shadow-md);
+  border-color: var(--border-color-light);
 }
 
 .admin-section {
@@ -93,6 +96,7 @@
   padding: var(--spacing-lg);
   border-radius: var(--border-radius-lg);
   box-shadow: var(--shadow-sm);
+  border: 1px solid var(--border-color);
   margin-bottom: var(--spacing-lg);
 }
 
@@ -102,22 +106,26 @@
 }
 
 .admin-table th {
-  background: var(--bg-light);
+  background: var(--bg-gray);
   padding: var(--spacing-md);
   text-align: left;
-  color: var(--text-secondary);
+  color: var(--primary);
   font-weight: 600;
   border-bottom: 2px solid var(--border-color);
+  text-transform: uppercase;
+  font-size: var(--font-size-xs);
+  letter-spacing: 0.05em;
 }
 
 .admin-table td {
   padding: var(--spacing-md);
   border-bottom: 1px solid var(--border-color);
   color: var(--text-primary);
+  font-size: var(--font-size-sm);
 }
 
 .admin-table tr:hover {
-  background: rgba(0, 0, 0, 0.02);
+  background: var(--bg-light);
 }
 
 @media (max-width: 768px) {

@@ -1,9 +1,10 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import NotificationBell from './NotificationBell';
 
 const Navbar = () => {
-  const { isLoggedIn, currentUser, profile, signOut, loading } = useAuth();
+  const { isLoggedIn, currentUser, profile, signOut, loading, isPending, isRejected } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -23,6 +24,9 @@ const Navbar = () => {
     }
   };
 
+  // Pending/rejected users see minimal nav
+  const showPendingNav = isLoggedIn && currentUser && (isPending || isRejected);
+
   return (
     <nav className="navbar">
       <div className="navbar-container">
@@ -32,7 +36,7 @@ const Navbar = () => {
               ← Back
             </button>
           )}
-          <Link to={isLoggedIn && currentUser ? getDashboardLink() : "/"} className="navbar-brand" style={{ textDecoration: 'none' }}>
+          <Link to={isLoggedIn && currentUser ? (showPendingNav ? '/pending' : getDashboardLink()) : "/"} className="navbar-brand" style={{ textDecoration: 'none' }}>
             <svg width="32" height="32" viewBox="0 0 32 32" fill="none">
               <rect width="32" height="32" rx="8" fill="var(--primary)"/>
               <text x="50%" y="50%" textAnchor="middle" dy="0.3em" fontSize="12" fontWeight="bold" fill="var(--bg-white)">CN</text>
@@ -41,7 +45,37 @@ const Navbar = () => {
           </Link>
         </div>
         <div className="navbar-end">
-          {isLoggedIn && currentUser ? (
+          {showPendingNav ? (
+            /* Minimal nav for pending/rejected users */
+            <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--spacing-md)' }}>
+              <span style={{
+                background: isPending ? 'rgba(245,158,11,0.1)' : 'rgba(239,68,68,0.1)',
+                color: isPending ? 'var(--warning)' : 'var(--danger)',
+                padding: '4px 12px',
+                borderRadius: '20px',
+                fontSize: 'var(--font-size-xs)',
+                fontWeight: 600,
+                display: 'flex',
+                alignItems: 'center',
+                gap: '6px',
+              }}>
+                <span style={{
+                  width: '6px',
+                  height: '6px',
+                  borderRadius: '50%',
+                  background: isPending ? 'var(--warning)' : 'var(--danger)',
+                  display: 'inline-block',
+                }} />
+                {isPending ? 'Pending Approval' : 'Rejected'}
+              </span>
+              <button
+                onClick={handleLogout}
+                className="btn btn-outline"
+                style={{ cursor: 'pointer', padding: '0.4rem 1rem' }}>
+                Logout
+              </button>
+            </div>
+          ) : isLoggedIn && currentUser ? (
             <>
               <Link to={getDashboardLink()} style={{ color: 'var(--text-primary)', marginRight: '1.5rem', fontWeight: 600, textDecoration: 'none' }}>
                 Dashboard
@@ -62,11 +96,12 @@ const Navbar = () => {
                 </div>
                 <span>{currentUser.name || currentUser.email}</span>
               </Link>
+              <NotificationBell />
               <button
                 onClick={handleLogout}
                 disabled={loading}
                 className="btn btn-outline"
-                style={{ cursor: 'pointer', padding: '0.4rem 1rem' }}>
+                style={{ cursor: 'pointer', padding: '0.4rem 1rem', marginLeft: '0.5rem' }}>
                 {loading ? '...' : 'Logout'}
               </button>
             </>

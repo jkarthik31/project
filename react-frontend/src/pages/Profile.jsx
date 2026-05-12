@@ -3,7 +3,7 @@ import { useAuth } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
 
 const Profile = () => {
-  const { user, profile, updateProfile, isLoggedIn, loading: authLoading, token } = useAuth();
+  const { profile, updateProfile, isLoggedIn, loading: authLoading, token } = useAuth();
   const navigate = useNavigate();
 
   const [isEditing, setIsEditing] = useState(false);
@@ -21,6 +21,8 @@ const Profile = () => {
   });
   const [statusMsg, setStatusMsg] = useState({ type: '', text: '' });
   const [isSaving, setIsSaving] = useState(false);
+  const [uploadingPhoto, setUploadingPhoto] = useState(false);
+  const [uploadingResume, setUploadingResume] = useState(false);
 
   useEffect(() => {
     if (!authLoading && !isLoggedIn) {
@@ -67,9 +69,6 @@ const Profile = () => {
     setFormData(prev => ({ ...prev, [name]: value }));
   };
 
-  const [uploadingPhoto, setUploadingPhoto] = useState(false);
-  const [uploadingResume, setUploadingResume] = useState(false);
-
   const handleFileUpload = async (e, type) => {
     const file = e.target.files[0];
     if (!file) return;
@@ -96,7 +95,7 @@ const Profile = () => {
       } else {
         setStatusMsg({ type: 'error', text: result.error || 'Upload failed.' });
       }
-    } catch (err) {
+    } catch {
       setStatusMsg({ type: 'error', text: 'Upload error.' });
     } finally {
       if (isPhoto) setUploadingPhoto(false);
@@ -201,7 +200,14 @@ const Profile = () => {
                 <div className="form-group">
                   <label>Department</label>
                   {isEditing ? (
-                    <input type="text" name="department" value={formData.department} onChange={handleChange} placeholder="Computer Science" />
+                    <select name="department" value={formData.department} onChange={handleChange} style={{ width: '100%', padding: 'var(--spacing-sm) var(--spacing-md)', borderRadius: 'var(--border-radius)', border: '1px solid var(--border-color)' }}>
+                      <option value="">Select Department</option>
+                      <option value="BCA">BCA</option>
+                      <option value="BCOM">BCOM</option>
+                      <option value="BBA">BBA</option>
+                      <option value="BSC">BSC</option>
+                      <option value="BA">BA</option>
+                    </select>
                   ) : (
                     <p style={{ color: 'var(--text-primary)', fontWeight: 500 }}>{formData.department || '-'}</p>
                   )}

@@ -9,7 +9,11 @@ router.use(authMiddleware); // All profile routes require login
 router.get('/:id', async (req, res) => {
   try {
     const [rows] = await db.query(
-      'SELECT id, email, name, role, department, phone, avatar_url, cgpa, skills, resume_url, portfolio_url, github_url, linkedin_url, profile_completion, created_at FROM profiles WHERE id = ?',
+      `SELECT id, email, name, role, department, phone, avatar_url, cgpa, skills,
+              resume_url, portfolio_url, github_url, linkedin_url, profile_completion,
+              approval_status, approved_by, approved_at, rejection_reason, is_first_login,
+              created_at
+       FROM profiles WHERE id = ?`,
       [req.params.id]
     );
     if (rows.length === 0) return res.status(404).json({ error: 'Profile not found.' });
@@ -44,7 +48,10 @@ router.put('/:id', async (req, res) => {
       [name, phone, department, cgpa, skills, avatar_url, resume_url, portfolio_url, github_url, linkedin_url, req.params.id]
     );
     const [rows] = await db.query(
-      'SELECT id, email, name, role, department, phone, avatar_url, cgpa, skills, resume_url, portfolio_url, github_url, linkedin_url, profile_completion FROM profiles WHERE id = ?',
+      `SELECT id, email, name, role, department, phone, avatar_url, cgpa, skills,
+              resume_url, portfolio_url, github_url, linkedin_url, profile_completion,
+              approval_status
+       FROM profiles WHERE id = ?`,
       [req.params.id]
     );
     res.json({ profile: rows[0] });
@@ -53,13 +60,29 @@ router.put('/:id', async (req, res) => {
   }
 });
 
-// GET /api/profiles  (admin only - get all profiles)
+// GET /api/profiles  (admin & hod - get profiles)
 router.get('/', async (req, res) => {
-  if (req.user.role !== 'admin') return res.status(403).json({ error: 'Admin only.' });
+  // Admin sees all profiles; HOD sees only their department
+  if (req.user.role !== 'admin' && req.user.role !== 'hod') {
+    return res.status(403).json({ error: 'Admin or HOD only.' });
+  }
+
   try {
-    const [rows] = await db.query(
-      'SELECT id, email, name, role, department, phone, cgpa, skills, resume_url, created_at FROM profiles ORDER BY created_at DESC'
-    );
+    let query = `SELECT id, email, name, role, department, phone, cgpa, skills, resume_url,
+                        approval_status, created_at
+                 FROM profiles`;
+    let params = [];
+
+    if (req.user.role === 'hod') {
+      // HOD only sees their department members
+      const [hodRow] = await db.query('SELECT department FROM profiles WHERE id = ?', [req.user.id]);
+      const dept = hodRow[0]?.department;
+      query += ` WHERE department = ?`;
+      params.push(dept);
+    }
+
+    query += ' ORDER BY created_at DESC';
+    const [rows] = await db.query(query, params);
     res.json({ profiles: rows });
   } catch (err) {
     res.status(500).json({ error: 'Server error.' });

@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 
 const AuthContext = createContext();
 
@@ -10,14 +10,18 @@ const saveLocal = (token, profile) => {
   try {
     localStorage.setItem(TOKEN_KEY, token);
     localStorage.setItem(PROFILE_KEY, JSON.stringify(profile));
-  } catch (_) {}
+  } catch {
+    // Local storage may be unavailable in private browsing or restricted contexts.
+  }
 };
 
 const clearLocal = () => {
   try {
     localStorage.removeItem(TOKEN_KEY);
     localStorage.removeItem(PROFILE_KEY);
-  } catch (_) {}
+  } catch {
+    // Local storage may be unavailable in private browsing or restricted contexts.
+  }
 };
 
 const loadLocal = () => {
@@ -25,16 +29,35 @@ const loadLocal = () => {
     const token = localStorage.getItem(TOKEN_KEY);
     const profile = JSON.parse(localStorage.getItem(PROFILE_KEY) || 'null');
     return { token, profile };
-  } catch (_) {
+  } catch {
     return { token: null, profile: null };
   }
 };
 
 export const AuthProvider = ({ children }) => {
-  const cached = loadLocal();
+  const [cached] = useState(loadLocal);
   const [token, setToken]     = useState(cached.token);
   const [profile, setProfile] = useState(cached.profile);
   const [loading, setLoading] = useState(!!cached.token); // only load if token exists
+
+  // Refresh profile from server (used for polling approval status)
+  const refreshProfile = useCallback(async () => {
+    if (!token) return null;
+    try {
+      const res = await fetch(`${API}/auth/me`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const data = await res.json();
+      if (data.profile) {
+        setProfile(data.profile);
+        saveLocal(token, data.profile);
+        return data.profile;
+      }
+    } catch {
+      console.warn('Server unreachable during profile refresh.');
+    }
+    return null;
+  }, [token]);
 
   // On mount: verify existing token is still valid
   useEffect(() => {
@@ -80,7 +103,7 @@ export const AuthProvider = ({ children }) => {
       setToken(data.token);
       setProfile(data.profile);
       return { data, error: null };
-    } catch (err) {
+    } catch {
       return { error: { message: 'Cannot connect to server. Is the backend running?' } };
     }
   };
@@ -93,13 +116,21 @@ export const AuthProvider = ({ children }) => {
         body: JSON.stringify({ email, password }),
       });
       const data = await res.json();
-      if (!res.ok) return { error: { message: data.error } };
+      if (!res.ok) {
+        return {
+          error: {
+            message: data.error,
+            approval_status: data.approval_status || null,
+            rejection_reason: data.rejection_reason || null,
+          },
+        };
+      }
 
       saveLocal(data.token, data.profile);
       setToken(data.token);
       setProfile(data.profile);
       return { data, error: null };
-    } catch (err) {
+    } catch {
       return { error: { message: 'Cannot connect to server. Make sure the backend is running on port 5000.' } };
     }
   };
@@ -127,18 +158,24 @@ export const AuthProvider = ({ children }) => {
       saveLocal(token, data.profile);
       setProfile(data.profile);
       return { data: data.profile, error: null };
-    } catch (err) {
+    } catch {
       return { error: { message: 'Server error.' } };
     }
   };
 
-  const isLoggedIn = !!token && !!profile;
-  const isStudent  = profile?.role === 'student';
-  const isTeacher  = profile?.role === 'teacher';
-  const isHOD      = profile?.role === 'hod';
-  const isAdmin    = profile?.role === 'admin';
-  const user       = profile ? { id: profile.id } : null;
-  const currentUser = profile;
+  const isLoggedIn    = !!token && !!profile;
+  const isStudent     = profile?.role === 'student';
+  const isTeacher     = profile?.role === 'teacher';
+  const isHOD         = profile?.role === 'hod';
+  const isAdmin       = profile?.role === 'admin';
+  const user          = profile ? { id: profile.id } : null;
+  const currentUser   = profile;
+
+  // Approval status helpers
+  const approvalStatus = profile?.approval_status || null;
+  const isPending      = approvalStatus === 'pending';
+  const isApproved     = approvalStatus === 'approved';
+  const isRejected     = approvalStatus === 'rejected';
 
   return (
     <AuthContext.Provider value={{
@@ -152,10 +189,17 @@ export const AuthProvider = ({ children }) => {
       isTeacher,
       isHOD,
       isAdmin,
+      // Approval helpers
+      approvalStatus,
+      isPending,
+      isApproved,
+      isRejected,
+      // Actions
       signUp,
       signIn,
       signOut,
       updateProfile,
+      refreshProfile,
     }}>
       {children}
     </AuthContext.Provider>

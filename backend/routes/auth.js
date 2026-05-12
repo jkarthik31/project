@@ -6,6 +6,18 @@ const db = require('../db');
 
 const router = express.Router();
 
+// Helper: send in-app notification to a user
+const notify = async (userId, type, title, message, link = null) => {
+  try {
+    await db.query(
+      `INSERT INTO notifications (user_id, type, title, message, link) VALUES (?, ?, ?, ?, ?)`,
+      [userId, type, title, message, link]
+    );
+  } catch (err) {
+    console.error('Notification insert error:', err.message);
+  }
+};
+
 // POST /api/auth/signup
 router.post('/signup', async (req, res) => {
   const { email, password, name, role = 'student', department = null } = req.body;
@@ -24,13 +36,21 @@ router.post('/signup', async (req, res) => {
     const id = uuidv4();
     const password_hash = await bcrypt.hash(password, 12);
 
+    // Determine approval status:
+    //   - admin accounts are auto-approved
+    //   - students & HODs default to pending
+    const approval_status = role === 'admin' ? 'approved' : 'pending';
+
     await db.query(
-      `INSERT INTO profiles (id, email, name, password_hash, role, department)
-       VALUES (?, ?, ?, ?, ?, ?)`,
-      [id, email, name, password_hash, role, department]
+      `INSERT INTO profiles (id, email, name, password_hash, role, department, approval_status, is_first_login)
+       VALUES (?, ?, ?, ?, ?, ?, ?, TRUE)`,
+      [id, email, name, password_hash, role, department, approval_status]
     );
 
-    const [rows] = await db.query('SELECT id, email, name, role, department FROM profiles WHERE id = ?', [id]);
+    const [rows] = await db.query(
+      'SELECT id, email, name, role, department, approval_status FROM profiles WHERE id = ?',
+      [id]
+    );
     const profile = rows[0];
 
     const token = jwt.sign(
@@ -38,6 +58,38 @@ router.post('/signup', async (req, res) => {
       process.env.JWT_SECRET,
       { expiresIn: process.env.JWT_EXPIRES_IN }
     );
+
+    // Send notifications for pending accounts
+    if (approval_status === 'pending') {
+      if (role === 'hod') {
+        // Notify all admins
+        const [admins] = await db.query("SELECT id FROM profiles WHERE role = 'admin' AND approval_status = 'approved'");
+        for (const admin of admins) {
+          await notify(admin.id, 'approval_request', 'New HOD Registration',
+            `${name} has registered as HOD for ${department || 'unspecified'} department and is awaiting your approval.`,
+            '/admin?tab=approvals');
+        }
+      } else if (role === 'student') {
+        // Notify HOD of that department + all admins
+        if (department) {
+          const [hods] = await db.query(
+            "SELECT id FROM profiles WHERE role = 'hod' AND department = ? AND approval_status = 'approved'",
+            [department]
+          );
+          for (const hod of hods) {
+            await notify(hod.id, 'approval_request', 'New Student Registration',
+              `${name} has registered as a student in ${department} and is awaiting your approval.`,
+              '/hod?tab=student-approvals');
+          }
+        }
+        const [admins] = await db.query("SELECT id FROM profiles WHERE role = 'admin' AND approval_status = 'approved'");
+        for (const admin of admins) {
+          await notify(admin.id, 'approval_request', 'New Student Registration',
+            `${name} has registered as a student${department ? ` in ${department}` : ''} and is awaiting approval.`,
+            '/admin?tab=approvals');
+        }
+      }
+    }
 
     res.status(201).json({ token, profile });
   } catch (err) {
@@ -67,6 +119,15 @@ router.post('/login', async (req, res) => {
       return res.status(401).json({ error: 'Invalid email or password.' });
     }
 
+    // If account was rejected, block login
+    if (profile.approval_status === 'rejected') {
+      return res.status(403).json({
+        error: 'Your account has been rejected.',
+        rejection_reason: profile.rejection_reason || null,
+        approval_status: 'rejected',
+      });
+    }
+
     const token = jwt.sign(
       { id: profile.id, email: profile.email, role: profile.role },
       process.env.JWT_SECRET,
@@ -87,7 +148,11 @@ router.post('/login', async (req, res) => {
 router.get('/me', require('../middleware/auth'), async (req, res) => {
   try {
     const [rows] = await db.query(
-      'SELECT id, email, name, role, department, phone, avatar_url, cgpa, skills, resume_url, portfolio_url, github_url, linkedin_url, profile_completion, created_at FROM profiles WHERE id = ?',
+      `SELECT id, email, name, role, department, phone, avatar_url, cgpa, skills,
+              resume_url, portfolio_url, github_url, linkedin_url, profile_completion,
+              approval_status, approved_by, approved_at, rejection_reason, is_first_login,
+              created_at
+       FROM profiles WHERE id = ?`,
       [req.user.id]
     );
     if (rows.length === 0) return res.status(404).json({ error: 'Profile not found.' });

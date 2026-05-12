@@ -6,12 +6,13 @@ import './AdminDashboard.css';
 
 const TeacherDashboard = () => {
   const { user, profile, isLoggedIn, loading: authLoading } = useAuth();
-  const { getDashboardStats, getApplications, updateApplicationStatus } = useData();
+  const { getDashboardStats, getApplications, updateApplicationStatus, getProfilesByDepartment } = useData();
   const navigate = useNavigate();
   
   const [activeTab, setActiveTab] = useState('dashboard');
-  const [stats, setStats] = useState({ totalStudents: 0, totalApplications: 0 });
+  const [, setStats] = useState({ totalStudents: 0, totalApplications: 0 });
   const [applications, setApplications] = useState([]);
+  const [students, setStudents] = useState([]);
   const [loading, setLoading] = useState(true);
   const [pendingStatusUpdates, setPendingStatusUpdates] = useState({});
 
@@ -26,8 +27,16 @@ const TeacherDashboard = () => {
       if (user) {
         const dashStats = await getDashboardStats();
         setStats(dashStats);
+        
         const apps = await getApplications();
         setApplications(apps);
+        
+        // Get students from own department only
+        const studentData = profile?.department
+          ? await getProfilesByDepartment(profile.department)
+          : [];
+        setStudents(studentData.filter(p => p.role === 'student'));
+        
         setLoading(false);
       }
     };
@@ -71,7 +80,7 @@ const TeacherDashboard = () => {
   return (
     <div className="admin-dashboard-container">
       {/* Sidebar */}
-      <aside className="admin-sidebar" style={{ background: 'linear-gradient(180deg, var(--info) 0%, var(--primary-dark) 100%)' }}>
+      <aside className="admin-sidebar" style={{ background: 'var(--primary)' }}>
         <ul className="admin-menu">
             <li><button className={activeTab === 'dashboard' ? 'active' : ''} onClick={() => setActiveTab('dashboard')}>Dashboard</button></li>
             <li><button className={activeTab === 'students' ? 'active' : ''} onClick={() => setActiveTab('students')}>Students</button></li>
@@ -84,13 +93,18 @@ const TeacherDashboard = () => {
         {/* Header */}
         <div className="admin-header">
             <div>
-                <h1 style={{ margin: '0 0 var(--spacing-xs) 0', background: 'linear-gradient(135deg, var(--info) 0%, var(--primary) 100%)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
-                  Teacher Dashboard
-                </h1>
-                <p style={{ color: 'var(--text-secondary)', margin: 0 }}>Welcome, {profile.name || 'Teacher User'} ({profile.department || 'Department'})</p>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--spacing-md)' }}>
+                  <h1 style={{ margin: '0 0 var(--spacing-xs) 0', color: 'var(--primary)' }}>
+                    Teacher Dashboard
+                  </h1>
+                  {profile.department && (
+                    <span style={{ background: 'linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%)', color: '#fff', padding: '4px 14px', borderRadius: '20px', fontSize: 'var(--font-size-xs)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em' }}>{profile.department}</span>
+                  )}
+                </div>
+                <p style={{ color: 'var(--text-secondary)', margin: 0 }}>Welcome, {profile.name || 'Teacher User'}</p>
             </div>
             <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--spacing-md)' }}>
-                <div style={{ width: '40px', height: '40px', borderRadius: '50%', background: 'linear-gradient(135deg, var(--info), var(--primary))', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--bg-white)', fontWeight: 'bold' }}>
+                <div style={{ width: '40px', height: '40px', borderRadius: '50%', background: 'var(--primary)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--bg-white)', fontWeight: 'bold' }}>
                   TR
                 </div>
             </div>
@@ -101,19 +115,66 @@ const TeacherDashboard = () => {
           <div className="admin-tab-content">
             {/* Statistics */}
             <div className="admin-stats-grid">
-
-
-                <div class="admin-stat-card" style={{ borderLeftColor: 'var(--success)' }}>
+                <div className="admin-stat-card">
                     <div style={{ color: 'var(--text-muted)', fontSize: 'var(--font-size-sm)', textTransform: 'uppercase', fontWeight: 600 }}>Total Students</div>
-                    <div style={{ fontSize: 'var(--font-size-2xl)', fontWeight: 700, color: 'var(--success)' }}>{stats.totalStudents || 85}</div>
+                    <div style={{ fontSize: 'var(--font-size-2xl)', fontWeight: 700, color: 'var(--primary)' }}>{students.length}</div>
                 </div>
                 
-                <div class="admin-stat-card" style={{ borderLeftColor: 'var(--warning)' }}>
+                <div className="admin-stat-card">
                     <div style={{ color: 'var(--text-muted)', fontSize: 'var(--font-size-sm)', textTransform: 'uppercase', fontWeight: 600 }}>Pending Evaluations</div>
-                    <div style={{ fontSize: 'var(--font-size-2xl)', fontWeight: 700, color: 'var(--warning)' }}>5</div>
+                    <div style={{ fontSize: 'var(--font-size-2xl)', fontWeight: 700, color: 'var(--primary)' }}>{applications.filter(a => a.status === 'applied').length}</div>
                 </div>
             </div>
+          </div>
+        )}
 
+        {/* STUDENTS TAB */}
+        {activeTab === 'students' && (
+          <div className="admin-section">
+            <h3 style={{ margin: '0 0 var(--spacing-lg) 0', color: 'var(--primary)' }}>My Department Students ({profile.department})</h3>
+            <div style={{ overflowX: 'auto' }}>
+                <table className="admin-table">
+                    <thead>
+                        <tr>
+                            <th>Name</th>
+                            <th>Company Applied</th>
+                            <th>Status</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {students.length > 0 ? students.map(student => {
+                            const studentApps = applications.filter(a => a.student_id === student.id || a.student_email === student.email);
+                            return (
+                            <tr key={student.id}>
+                                <td>{student.name || 'Unnamed Student'}</td>
+                                <td>
+                                  {studentApps.length > 0 
+                                    ? studentApps.map((a, i) => <div key={i}>{a.company || a.jobs?.company || 'Unknown Company'}</div>) 
+                                    : <span style={{ color: 'var(--text-muted)' }}>Not applied</span>}
+                                </td>
+                                <td>
+                                  {studentApps.length > 0 
+                                    ? studentApps.map((a, i) => (
+                                        <div key={i} style={{ marginBottom: '4px' }}>
+                                          <span className={`badge badge-${a.status === 'applied' ? 'info' : a.status === 'selected' ? 'success' : a.status === 'rejected' ? 'danger' : 'warning'}`}>
+                                            {a.status.toUpperCase()}
+                                          </span>
+                                        </div>
+                                      ))
+                                    : '-'}
+                                </td>
+                                <td>
+                                  <button className="btn btn-ghost btn-sm" style={{ padding: '0.2rem 0.5rem', fontSize: '0.8rem', color: 'var(--info)' }}>View Profile</button>
+                                </td>
+                            </tr>
+                            );
+                        }) : (
+                            <tr><td colSpan="4" style={{ textAlign: 'center', padding: 'var(--spacing-xl)' }}>No students found.</td></tr>
+                        )}
+                    </tbody>
+                </table>
+            </div>
           </div>
         )}
 
@@ -154,13 +215,14 @@ const TeacherDashboard = () => {
                                       <option value="shortlisted">Shortlisted</option>
                                       <option value="interview">Interview</option>
                                       <option value="selected">Selected</option>
+                                      <option value="offer">Offer</option>
                                       <option value="rejected">Rejected</option>
                                     </select>
                                     
                                     {pendingStatusUpdates[app.id] && pendingStatusUpdates[app.id] !== app.status && (
                                       <button 
                                         onClick={() => handleUpdateAppStatus(app.id)}
-                                        className="btn btn-primary btn-sm"
+                                        className="btn btn-accent btn-sm"
                                         style={{ padding: '0.2rem 0.5rem', fontSize: '0.8rem' }}
                                       >
                                         Apply
@@ -170,7 +232,7 @@ const TeacherDashboard = () => {
                                 </td>
                             </tr>
                         )) : (
-                            <tr><td colSpan="4" style={{ textAlign: 'center' }}>No applications found.</td></tr>
+                            <tr><td colSpan="4" style={{ textAlign: 'center', padding: 'var(--spacing-xl)' }}>No applications found.</td></tr>
                         )}
                     </tbody>
                 </table>
@@ -178,13 +240,6 @@ const TeacherDashboard = () => {
           </div>
         )}
 
-        {/* Mock Tabs */}
-        {activeTab !== 'dashboard' && activeTab !== 'evaluations' && (
-          <div className="admin-section" style={{ textAlign: 'center', padding: '60px 20px' }}>
-            <h3 style={{ color: 'var(--text-secondary)' }}>{activeTab.charAt(0).toUpperCase() + activeTab.slice(1)} Module Under Construction</h3>
-            <p>This module is currently being integrated with the new Supabase backend.</p>
-          </div>
-        )}
       </main>
     </div>
   );

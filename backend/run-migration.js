@@ -3,6 +3,9 @@ const mysql = require('mysql2/promise');
 const fs = require('fs');
 const path = require('path');
 
+// Accept migration filename as CLI arg, e.g.: node run-migration.js features_v2.sql
+const migrationFile = process.argv[2] || '01_eligibility_and_saved_jobs.sql';
+
 mysql.createConnection({
   host: process.env.DB_HOST,
   user: process.env.DB_USER,
@@ -10,8 +13,8 @@ mysql.createConnection({
   database: process.env.DB_NAME,
   port: process.env.DB_PORT || 3306,
 }).then(async conn => {
-  console.log('Connected to DB');
-  const sql = fs.readFileSync(path.join(__dirname, 'migrations', '01_eligibility_and_saved_jobs.sql'), 'utf-8');
+  console.log('Connected to DB. Running migration:', migrationFile);
+  const sql = fs.readFileSync(path.join(__dirname, 'migrations', migrationFile), 'utf-8');
   
   // mysql2 by default does not support multiple statements in query unless enabled.
   // We can just run them separately.
