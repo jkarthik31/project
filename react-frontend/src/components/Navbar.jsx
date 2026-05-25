@@ -1,10 +1,12 @@
 import React from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { useTheme } from '../context/ThemeContext';
 import NotificationBell from './NotificationBell';
 
 const Navbar = () => {
   const { isLoggedIn, currentUser, profile, signOut, loading, isPending, isRejected } = useAuth();
+  const { theme, toggleTheme } = useTheme();
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -30,24 +32,37 @@ const Navbar = () => {
   return (
     <nav className="navbar">
       <div className="navbar-container">
-        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+        <div className="navbar-left">
           {location.pathname !== '/' && (
             <button onClick={() => navigate(-1)} className="btn btn-ghost" style={{ padding: '0.4rem 0.8rem' }}>
               ← Back
             </button>
           )}
-          <Link to={isLoggedIn && currentUser ? (showPendingNav ? '/pending' : getDashboardLink()) : "/"} className="navbar-brand" style={{ textDecoration: 'none' }}>
-            <svg width="32" height="32" viewBox="0 0 32 32" fill="none">
-              <rect width="32" height="32" rx="8" fill="var(--primary)"/>
-              <text x="50%" y="50%" textAnchor="middle" dy="0.3em" fontSize="12" fontWeight="bold" fill="var(--bg-white)">CN</text>
-            </svg>
-            <span>Campus Nexus</span>
+          <Link to={isLoggedIn && currentUser ? (showPendingNav ? '/pending' : getDashboardLink()) : "/"} className="navbar-brand" style={{ textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <img src="/logo.png" alt="Campus Nexus" style={{ height: '32px', width: 'auto', borderRadius: '4px' }} onError={(e) => {
+              e.target.style.display = 'none';
+              e.target.nextSibling.style.display = 'flex';
+            }} />
+            <div className="navbar-logo-fallback" style={{ display: 'none', width: '32px', height: '32px', borderRadius: '8px', background: 'var(--primary)', alignItems: 'center', justifyContent: 'center', color: 'var(--bg-white)', fontWeight: 'bold', fontSize: '12px' }}>
+              CN
+            </div>
+            <span style={{ minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', fontWeight: '600', color: 'var(--text-primary)' }}>Campus Nexus</span>
           </Link>
         </div>
-        <div className="navbar-end">
+        <div className="navbar-end" style={{ minWidth: 0 }}>
+          <button
+            type="button"
+            className="theme-toggle"
+            style={{ flexShrink: 0 }}
+            onClick={toggleTheme}
+            aria-label={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
+            title={theme === 'dark' ? 'Light mode' : 'Dark mode'}
+          >
+            {theme === 'dark' ? '☀' : '☾'}
+          </button>
           {showPendingNav ? (
             /* Minimal nav for pending/rejected users */
-            <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--spacing-md)' }}>
+            <div className="navbar-pending-actions">
               <span style={{
                 background: isPending ? 'rgba(245,158,11,0.1)' : 'rgba(239,68,68,0.1)',
                 color: isPending ? 'var(--warning)' : 'var(--danger)',
@@ -76,22 +91,22 @@ const Navbar = () => {
               </button>
             </div>
           ) : isLoggedIn && currentUser ? (
-            <>
-              <Link to={getDashboardLink()} style={{ color: 'var(--text-primary)', marginRight: '1.5rem', fontWeight: 600, textDecoration: 'none' }}>
+            <div className="navbar-links">
+              <Link to={getDashboardLink()} className="btn btn-ghost btn-sm">
                 Dashboard
               </Link>
               {profile?.role === 'student' && (
                 <>
-                  <Link to="/jobs" style={{ color: 'var(--text-primary)', marginRight: '1.5rem', fontWeight: 600, textDecoration: 'none' }}>
+                  <Link to="/jobs" className="btn btn-ghost btn-sm">
                     Jobs
                   </Link>
-                  <Link to="/applications" style={{ color: 'var(--text-primary)', marginRight: '1.5rem', fontWeight: 600, textDecoration: 'none' }}>
+                  <Link to="/applications" className="btn btn-ghost btn-sm">
                     Applications
                   </Link>
                 </>
               )}
-              <Link to="/profile" style={{ color: 'var(--text-primary)', marginRight: '1rem', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <div style={{ width: '28px', height: '28px', borderRadius: '50%', background: 'var(--primary)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold', color: 'var(--bg-white)' }}>
+              <Link to="/profile" className="navbar-user-link">
+                <div className="avatar-chip">
                   {currentUser.name?.charAt(0) || 'U'}
                 </div>
                 <span>{currentUser.name || currentUser.email}</span>
@@ -101,16 +116,12 @@ const Navbar = () => {
                 onClick={handleLogout}
                 disabled={loading}
                 className="btn btn-outline"
-                style={{ cursor: 'pointer', padding: '0.4rem 1rem', marginLeft: '0.5rem' }}>
+                style={{ cursor: 'pointer', padding: '0.4rem 1rem' }}>
                 {loading ? '...' : 'Logout'}
               </button>
-            </>
+            </div>
           ) : (
-            <div style={{ display: 'flex', gap: '8px' }}>
-              <Link to="/?role=student" className="btn btn-outline btn-sm">Student</Link>
-              <Link to="/?role=teacher" className="btn btn-ghost btn-sm">Teacher</Link>
-              <Link to="/?role=hod" className="btn btn-ghost btn-sm">HOD</Link>
-              <Link to="/?role=admin" className="btn btn-secondary btn-sm">Admin</Link>
+            <div className="navbar-auth-links">
             </div>
           )}
         </div>

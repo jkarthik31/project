@@ -54,7 +54,8 @@ router.get('/', async (req, res) => {
     }
 
     const [rows] = await db.query(
-      `SELECT a.*, j.title as job_title, j.company, p.name as student_name, p.email as student_email, p.department as student_department
+      `SELECT a.*, j.title as job_title, j.company, j.position, j.location, j.deadline,
+              p.name as student_name, p.email as student_email, p.department as student_department
        FROM applications a
        LEFT JOIN jobs j ON a.job_id = j.id
        LEFT JOIN profiles p ON a.student_id = p.id
@@ -86,13 +87,24 @@ router.post('/', async (req, res) => {
     const job = jobs[0];
 
     const [profiles] = await db.query(
-      'SELECT cgpa, department, name FROM profiles WHERE id = ?',
+      'SELECT cgpa, department, name, resume_status, eligibility_status FROM profiles WHERE id = ?',
       [req.user.id]
     );
     const student = profiles[0] || {};
     const studentCgpa = parseFloat(student.cgpa) || 0;
     const studentDept = student.department || '';
+    const studentResumeStatus = (student.resume_status || 'Pending').toLowerCase().trim();
+    const studentEligibilityStatus = (student.eligibility_status || 'Training Pending').toLowerCase().trim();
 
+    // Global Eligibility Checks
+    if (studentResumeStatus !== 'approved') {
+      return res.status(403).json({ error: `Your resume must be approved by a teacher before you can apply. Current Status: ${student.resume_status || 'Pending'}` });
+    }
+    if (studentEligibilityStatus !== 'eligible for placement') {
+      return res.status(403).json({ error: `You are not currently marked as eligible for placement. Current Status: ${student.eligibility_status || 'Training Pending'}` });
+    }
+
+    // Job-specific Eligibility Checks
     if (job.min_cgpa && studentCgpa < parseFloat(job.min_cgpa)) {
       return res.status(403).json({ error: `Minimum CGPA required: ${job.min_cgpa}` });
     }
@@ -159,10 +171,10 @@ router.get('/:id/history', async (req, res) => {
   }
 });
 
-// PATCH /api/applications/:id/status — update status (admin/hod/teacher)
+// PATCH /api/applications/:id/status — update status (admin/hod only)
 router.patch('/:id/status', async (req, res) => {
-  if (!['admin', 'hod', 'teacher'].includes(req.user.role)) {
-    return res.status(403).json({ error: 'Forbidden.' });
+  if (!['admin', 'hod'].includes(req.user.role)) {
+    return res.status(403).json({ error: 'Only HODs and Admins can update application status.' });
   }
 
   const { status, notes } = req.body;

@@ -21,9 +21,14 @@ const notify = async (userId, type, title, message, link = null) => {
 // POST /api/auth/signup
 router.post('/signup', async (req, res) => {
   const { email, password, name, role = 'student', department = null } = req.body;
+  const validRoles = ['student', 'teacher', 'hod', 'admin'];
 
   if (!email || !password || !name) {
     return res.status(400).json({ error: 'Email, password, and name are required.' });
+  }
+
+  if (!validRoles.includes(role)) {
+    return res.status(400).json({ error: 'Invalid account role.' });
   }
 
   try {
@@ -36,9 +41,7 @@ router.post('/signup', async (req, res) => {
     const id = uuidv4();
     const password_hash = await bcrypt.hash(password, 12);
 
-    // Determine approval status:
-    //   - admin accounts are auto-approved
-    //   - students & HODs default to pending
+    // Admin accounts are auto-approved; campus roles wait for approval.
     const approval_status = role === 'admin' ? 'approved' : 'pending';
 
     await db.query(
@@ -86,6 +89,13 @@ router.post('/signup', async (req, res) => {
         for (const admin of admins) {
           await notify(admin.id, 'approval_request', 'New Student Registration',
             `${name} has registered as a student${department ? ` in ${department}` : ''} and is awaiting approval.`,
+            '/admin?tab=approvals');
+        }
+      } else if (role === 'teacher') {
+        const [admins] = await db.query("SELECT id FROM profiles WHERE role = 'admin' AND approval_status = 'approved'");
+        for (const admin of admins) {
+          await notify(admin.id, 'approval_request', 'New Teacher Registration',
+            `${name} has registered as a teacher${department ? ` in ${department}` : ''} and is awaiting approval.`,
             '/admin?tab=approvals');
         }
       }

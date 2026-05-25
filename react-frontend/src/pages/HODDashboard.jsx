@@ -4,10 +4,37 @@ import { useData } from '../context/DataContext';
 import { useNavigate } from 'react-router-dom';
 import './AdminDashboard.css';
 
+// Pure-CSS bar chart component
+const BarChart = ({ data, labelKey, valueKey, color = 'var(--primary)' }) => {
+  if (!data || data.length === 0) return <p style={{ color: 'var(--text-muted)' }}>No data available.</p>;
+  const max = Math.max(...data.map(d => Number(d[valueKey]) || 0)) || 1;
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+      {data.map((item, i) => (
+        <div key={i}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px', marginBottom: '3px', color: 'var(--text-secondary)' }}>
+            <span>{item[labelKey]}</span>
+            <strong style={{ color: 'var(--text-primary)' }}>{item[valueKey]}</strong>
+          </div>
+          <div style={{ height: '10px', background: 'var(--bg-gray)', borderRadius: '5px', overflow: 'hidden' }}>
+            <div style={{
+              height: '100%',
+              width: `${(Number(item[valueKey]) / max) * 100}%`,
+              background: color,
+              borderRadius: '5px',
+              transition: 'width 0.8s ease',
+            }} />
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+};
+
 const HODDashboard = () => {
   const { user, profile, isLoggedIn, loading: authLoading } = useAuth();
-  const { getDashboardStats, getApplications, getJobs, createJob, deleteJob, updateApplicationStatus, getProfilesByDepartment,
-          getPendingApprovals, getApprovalHistory, approveUser, rejectUser } = useData();
+  const { getDashboardStats, getApplications, getJobs, createJob, updateJob, deleteJob, updateApplicationStatus, getProfilesByDepartment,
+          getPendingApprovals, getApprovalHistory, approveUser, rejectUser, getAnalyticsByDepartment } = useData();
   const navigate = useNavigate();
   
   const [activeTab, setActiveTab] = useState('dashboard');
@@ -15,12 +42,40 @@ const HODDashboard = () => {
   const [applications, setApplications] = useState([]);
   const [jobs, setJobs] = useState([]);
   const [students, setStudents] = useState([]);
+  const [teachers, setTeachers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [pendingStatusUpdates, setPendingStatusUpdates] = useState({});
 
   // New Job Form State
-  const [newJob, setNewJob] = useState({ title: '', company: '', position: '', location: '', deadline: '', status: 'active' });
+  const [newJob, setNewJob] = useState({ 
+    title: '', 
+    company: '', 
+    position: '', 
+    location: '', 
+    deadline: '', 
+    status: 'active',
+    allowed_departments: [],
+    description: '',
+    package: '',
+    required_skills: '',
+    job_type: 'Full-time',
+    experience_level: 'Fresher',
+    work_mode: 'On-site',
+    company_type: 'IT Services'
+  });
   const [jobCreating, setJobCreating] = useState(false);
+  const [editingJob, setEditingJob] = useState(null);
+
+  // Analytics State
+  const [deptAnalytics, setDeptAnalytics] = useState(null);
+  const [analyticsLoading, setAnalyticsLoading] = useState(false);
+
+  // Common options for dropdowns
+  const departments = ['BCA', 'BBA', 'BA', 'BCom', 'BSC'];
+  const locations = ['Bengaluru', 'Delhi', 'Hyderabad', 'Chennai'];
+  const jobTypes = ['Full-time', 'Internship', 'Part-time', 'Contract'];
+  const experienceLevels = ['Fresher', '0-1 Years', '1-3 Years', '3-5 Years', '5+ Years'];
+  const workModes = ['On-site', 'Remote', 'Hybrid'];
 
   // Student Approval State
   const [pendingStudents, setPendingStudents] = useState([]);
@@ -38,7 +93,7 @@ const HODDashboard = () => {
   useEffect(() => {
     const loadData = async () => {
       if (user && profile) {
-        const [dashStats, apps, jobsData, studentData] = await Promise.all([
+        const [dashStats, apps, jobsData, profileData] = await Promise.all([
           getDashboardStats(),
           getApplications(),
           getJobs(),
@@ -47,22 +102,86 @@ const HODDashboard = () => {
         setStats(dashStats || { totalStudents: 0, totalApplications: 0, totalJobs: 0 });
         setApplications(apps || []);
         setJobs(jobsData || []);
-        setStudents(studentData || []);
+        
+        const allProfiles = profileData || [];
+        setStudents(allProfiles.filter(p => p.role === 'student'));
+        setTeachers(allProfiles.filter(p => p.role === 'teacher'));
         setLoading(false);
       }
     };
     if (profile) loadData();
   }, [user, profile]);
 
+  const loadDeptAnalytics = async () => {
+    setAnalyticsLoading(true);
+    const depts = await getAnalyticsByDepartment();
+    const myDept = depts.find(d => d.department === profile.department);
+    setDeptAnalytics(myDept);
+    setAnalyticsLoading(false);
+  };
+
   const handleCreateJob = async (e) => {
     e.preventDefault();
     setJobCreating(true);
-    const { data, error } = await createJob(newJob);
-    if (!error && data) {
-      setJobs([data, ...jobs]);
-      setNewJob({ title: '', company: '', position: '', location: '', deadline: '', status: 'active' });
+    
+    // If no departments selected, default to HOD's department
+    const selectedDepts = newJob.allowed_departments.length > 0 
+      ? newJob.allowed_departments.join(',') 
+      : profile.department;
+
+    if (editingJob) {
+      const { data, error } = await updateJob(editingJob.id, {
+        ...newJob,
+        allowed_departments: selectedDepts
+      });
+      if (!error && data) {
+        setJobs(jobs.map(j => j.id === editingJob.id ? data : j));
+        setEditingJob(null);
+        setNewJob({ 
+          title: '', company: '', position: '', location: '', deadline: '', status: 'active',
+          allowed_departments: [],
+          description: '', package: '', required_skills: '',
+          job_type: 'Full-time', experience_level: 'Fresher', work_mode: 'On-site', company_type: 'IT Services'
+        });
+      }
+    } else {
+      const { data, error } = await createJob({
+        ...newJob,
+        allowed_departments: selectedDepts
+      });
+      if (!error && data) {
+        setJobs([data, ...jobs]);
+        setNewJob({ 
+          title: '', company: '', position: '', location: '', deadline: '', status: 'active',
+          allowed_departments: [],
+          description: '', package: '', required_skills: '',
+          job_type: 'Full-time', experience_level: 'Fresher', work_mode: 'On-site', company_type: 'IT Services'
+        });
+      }
     }
     setJobCreating(false);
+  };
+
+  const handleEditJob = (job) => {
+    setEditingJob(job);
+    setNewJob({
+      title: job.title || '',
+      company: job.company || '',
+      position: job.position || '',
+      location: job.location || '',
+      deadline: job.deadline ? new Date(job.deadline).toISOString().split('T')[0] : '',
+      status: job.status || 'active',
+      allowed_departments: job.allowed_departments ? job.allowed_departments.split(',') : [],
+      description: job.description || '',
+      package: job.package || '',
+      required_skills: job.required_skills || '',
+      job_type: job.job_type || 'Full-time',
+      experience_level: job.experience_level || 'Fresher',
+      work_mode: job.work_mode || 'On-site',
+      company_type: job.company_type || 'IT Services'
+    });
+    // Scroll to form
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   const handleDeleteJob = async (id) => {
@@ -106,6 +225,7 @@ const HODDashboard = () => {
     const { error } = await approveUser(userId);
     if (!error) {
       setPendingStudents(prev => prev.filter(u => u.id !== userId));
+      setStats(s => ({ ...s, totalStudents: (s.totalStudents || 0) + 1 }));
       loadStudentApprovals();
     }
   };
@@ -141,14 +261,15 @@ const HODDashboard = () => {
   return (
     <div className="admin-dashboard-container">
       {/* Sidebar */}
-      <aside className="admin-sidebar" style={{ background: 'var(--primary)' }}>
+      <aside className="admin-sidebar">
         <ul className="admin-menu">
             <li><button className={activeTab === 'dashboard' ? 'active' : ''} onClick={() => setActiveTab('dashboard')}>Dashboard</button></li>
             <li><button className={activeTab === 'students' ? 'active' : ''} onClick={() => setActiveTab('students')}>My Students</button></li>
+            <li><button className={activeTab === 'teachers' ? 'active' : ''} onClick={() => setActiveTab('teachers')}>Teachers</button></li>
             <li><button className={activeTab === 'student-approvals' ? 'active' : ''} onClick={() => { setActiveTab('student-approvals'); loadStudentApprovals(); }} style={{ position: 'relative' }}>Student Approvals {pendingStudents.length > 0 && <span style={{ background: 'var(--danger)', color: '#fff', borderRadius: '10px', padding: '1px 7px', fontSize: '11px', marginLeft: '4px' }}>{pendingStudents.length}</span>}</button></li>
             <li><button className={activeTab === 'jobs' ? 'active' : ''} onClick={() => setActiveTab('jobs')}>Jobs</button></li>
             <li><button className={activeTab === 'approvals' ? 'active' : ''} onClick={() => setActiveTab('approvals')}>Application Status</button></li>
-            <li><button className={activeTab === 'reports' ? 'active' : ''} onClick={() => setActiveTab('reports')}>Dept Reports</button></li>
+            <li><button className={activeTab === 'reports' ? 'active' : ''} onClick={() => { setActiveTab('reports'); loadDeptAnalytics(); }}>Dept Reports</button></li>
         </ul>
       </aside>
 
@@ -239,12 +360,61 @@ const HODDashboard = () => {
                                     : '-'}
                                 </td>
                                 <td>
-                                  <button className="btn btn-ghost btn-sm" style={{ color: 'var(--info)' }}>View Profile</button>
+                                  <button 
+                                    className="btn btn-ghost btn-sm" 
+                                    style={{ color: 'var(--info)' }}
+                                    onClick={() => navigate(`/profile/${student.id}`)}
+                                  >
+                                    View Profile
+                                  </button>
                                 </td>
                             </tr>
                             );
                         }) : (
                             <tr><td colSpan="4" style={{ textAlign: 'center', padding: 'var(--spacing-xl)' }}>No students found in your department.</td></tr>
+                        )}
+                    </tbody>
+                </table>
+            </div>
+          </div>
+        )}
+
+        {/* TEACHERS TAB */}
+        {activeTab === 'teachers' && (
+          <div className="admin-section">
+            <h3 style={{ margin: '0 0 var(--spacing-lg) 0', color: 'var(--primary)' }}>Teachers in {profile.department}</h3>
+            <div style={{ overflowX: 'auto' }}>
+                <table className="admin-table">
+                    <thead>
+                        <tr>
+                            <th>Name</th>
+                            <th>Email</th>
+                            <th>Verification</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {teachers.length > 0 ? teachers.map(teacher => (
+                            <tr key={teacher.id}>
+                                <td>{teacher.name || 'Unnamed Teacher'}</td>
+                                <td>{teacher.email}</td>
+                                <td>
+                                  <span className={`badge badge-${teacher.approval_status === 'approved' ? 'success' : teacher.approval_status === 'pending' ? 'warning' : 'danger'}`}>
+                                    {teacher.approval_status.toUpperCase()}
+                                  </span>
+                                </td>
+                                <td>
+                                  <button 
+                                    className="btn btn-ghost btn-sm" 
+                                    style={{ color: 'var(--info)' }}
+                                    onClick={() => navigate(`/profile/${teacher.id}`)}
+                                  >
+                                    View Profile
+                                  </button>
+                                </td>
+                            </tr>
+                        )) : (
+                            <tr><td colSpan="4" style={{ textAlign: 'center', padding: 'var(--spacing-xl)' }}>No teachers found in your department.</td></tr>
                         )}
                     </tbody>
                 </table>
@@ -319,17 +489,109 @@ const HODDashboard = () => {
           <div className="admin-section">
             <h3 style={{ color: 'var(--primary)', marginBottom: 'var(--spacing-md)' }}>Manage Jobs</h3>
             
-            <div style={{ background: 'var(--bg-gray)', padding: 'var(--spacing-md)', borderRadius: 'var(--border-radius-lg)', marginBottom: 'var(--spacing-xl)' }}>
-              <h4>Post New Job</h4>
-              <form onSubmit={handleCreateJob} style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginTop: '1rem' }}>
-                <input type="text" placeholder="Job Title" required value={newJob.title} onChange={e => setNewJob({...newJob, title: e.target.value})} style={{ padding: '0.5rem', borderRadius: '4px', border: '1px solid var(--border-color)', background: 'var(--bg-white)', color: 'var(--text-primary)' }} />
-                <input type="text" placeholder="Company Name" required value={newJob.company} onChange={e => setNewJob({...newJob, company: e.target.value})} style={{ padding: '0.5rem', borderRadius: '4px', border: '1px solid var(--border-color)', background: 'var(--bg-white)', color: 'var(--text-primary)' }} />
-                <input type="text" placeholder="Position / Role" required value={newJob.position} onChange={e => setNewJob({...newJob, position: e.target.value})} style={{ padding: '0.5rem', borderRadius: '4px', border: '1px solid var(--border-color)', background: 'var(--bg-white)', color: 'var(--text-primary)' }} />
-                <input type="text" placeholder="Location" value={newJob.location} onChange={e => setNewJob({...newJob, location: e.target.value})} style={{ padding: '0.5rem', borderRadius: '4px', border: '1px solid var(--border-color)', background: 'var(--bg-white)', color: 'var(--text-primary)' }} />
-                <input type="date" required value={newJob.deadline} onChange={e => setNewJob({...newJob, deadline: e.target.value})} style={{ padding: '0.5rem', borderRadius: '4px', border: '1px solid var(--border-color)', background: 'var(--bg-white)', color: 'var(--text-primary)' }} />
-                <button type="submit" disabled={jobCreating} className="btn btn-accent" style={{ height: 'fit-content', alignSelf: 'center' }}>
-                  {jobCreating ? 'Posting...' : 'Post Job'}
-                </button>
+            <div style={{ background: 'var(--bg-gray)', padding: 'var(--spacing-lg)', borderRadius: 'var(--border-radius-lg)', marginBottom: 'var(--spacing-xl)' }}>
+              <h4 style={{ marginBottom: 'var(--spacing-md)' }}>{editingJob ? 'Edit Job' : `Post New Job for ${profile.department}`}</h4>
+              <form onSubmit={handleCreateJob} style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.2rem' }}>
+                <div className="form-group">
+                  <label style={{ fontSize: '0.85rem', fontWeight: 600, display: 'block', marginBottom: '4px' }}>Job Title *</label>
+                  <input type="text" placeholder="e.g. Java Developer" required value={newJob.title} onChange={e => setNewJob({...newJob, title: e.target.value})} style={{ width: '100%', padding: '0.6rem', borderRadius: '4px', border: '1px solid var(--border-color)', background: 'var(--bg-white)', color: 'var(--text-primary)' }} />
+                </div>
+                
+                <div className="form-group">
+                  <label style={{ fontSize: '0.85rem', fontWeight: 600, display: 'block', marginBottom: '4px' }}>Position / Role *</label>
+                  <input type="text" placeholder="e.g. Associate Software Engineer" required value={newJob.position} onChange={e => setNewJob({...newJob, position: e.target.value})} style={{ width: '100%', padding: '0.6rem', borderRadius: '4px', border: '1px solid var(--border-color)', background: 'var(--bg-white)', color: 'var(--text-primary)' }} />
+                </div>
+
+                <div className="form-group">
+                  <label style={{ fontSize: '0.85rem', fontWeight: 600, display: 'block', marginBottom: '4px' }}>Company Name *</label>
+                  <input type="text" placeholder="e.g. TCS" required value={newJob.company} onChange={e => setNewJob({...newJob, company: e.target.value})} style={{ width: '100%', padding: '0.6rem', borderRadius: '4px', border: '1px solid var(--border-color)', background: 'var(--bg-white)', color: 'var(--text-primary)' }} />
+                </div>
+
+                <div className="form-group" style={{ gridColumn: '1 / -1' }}>
+                  <label style={{ fontSize: '0.85rem', fontWeight: 600, display: 'block', marginBottom: '4px' }}>Description *</label>
+                  <textarea placeholder="Job description and details..." required value={newJob.description} onChange={e => setNewJob({...newJob, description: e.target.value})} style={{ width: '100%', padding: '0.6rem', borderRadius: '4px', border: '1px solid var(--border-color)', background: 'var(--bg-white)', color: 'var(--text-primary)', minHeight: '100px', resize: 'vertical' }} />
+                </div>
+
+                <div className="form-group">
+                  <label style={{ fontSize: '0.85rem', fontWeight: 600, display: 'block', marginBottom: '4px' }}>Salary Package *</label>
+                  <input type="text" placeholder="e.g. 4.5 LPA" required value={newJob.package} onChange={e => setNewJob({...newJob, package: e.target.value})} style={{ width: '100%', padding: '0.6rem', borderRadius: '4px', border: '1px solid var(--border-color)', background: 'var(--bg-white)', color: 'var(--text-primary)' }} />
+                </div>
+
+                <div className="form-group">
+                  <label style={{ fontSize: '0.85rem', fontWeight: 600, display: 'block', marginBottom: '4px' }}>Last Date to Apply *</label>
+                  <input type="date" required value={newJob.deadline} onChange={e => setNewJob({...newJob, deadline: e.target.value})} style={{ width: '100%', padding: '0.6rem', borderRadius: '4px', border: '1px solid var(--border-color)', background: 'var(--bg-white)', color: 'var(--text-primary)' }} />
+                </div>
+
+                <div className="form-group" style={{ gridColumn: '1 / -1' }}>
+                  <label style={{ fontSize: '0.85rem', fontWeight: 600, display: 'block', marginBottom: '4px' }}>Skills Required (Comma separated) *</label>
+                  <input type="text" placeholder="e.g. Java, Spring Boot, MySQL" required value={newJob.required_skills} onChange={e => setNewJob({...newJob, required_skills: e.target.value})} style={{ width: '100%', padding: '0.6rem', borderRadius: '4px', border: '1px solid var(--border-color)', background: 'var(--bg-white)', color: 'var(--text-primary)' }} />
+                </div>
+
+                <div className="form-group" style={{ gridColumn: '1 / -1' }}>
+                  <label style={{ fontWeight: 600, fontSize: '0.85rem', display: 'block', marginBottom: '6px' }}>Eligible Departments *</label>
+                  <div style={{ display: 'flex', gap: 'var(--spacing-md)', flexWrap: 'wrap', background: 'var(--bg-white)', padding: 'var(--spacing-sm)', borderRadius: '4px', border: '1px solid var(--border-color)' }}>
+                    {departments.map(d => (
+                      <label key={d} style={{ display: 'flex', alignItems: 'center', gap: '4px', cursor: 'pointer', fontWeight: 'normal', fontSize: '0.85rem' }}>
+                        <input type="checkbox" checked={newJob.allowed_departments.includes(d)} onChange={e => {
+                          const depts = e.target.checked
+                            ? [...newJob.allowed_departments, d]
+                            : newJob.allowed_departments.filter(x => x !== d);
+                          setNewJob({...newJob, allowed_departments: depts});
+                        }} />
+                        {d}
+                      </label>
+                    ))}
+                    <label style={{ display: 'flex', alignItems: 'center', gap: '4px', cursor: 'pointer', fontWeight: 600, color: 'var(--primary)', fontSize: '0.85rem', marginLeft: 'auto' }}>
+                      <input type="checkbox" checked={newJob.allowed_departments.length === 0} onChange={() => setNewJob({...newJob, allowed_departments: []})} />
+                      My Dept Only ({profile.department})
+                    </label>
+                  </div>
+                </div>
+
+                <div className="form-group">
+                  <label style={{ fontSize: '0.85rem', fontWeight: 600, display: 'block', marginBottom: '4px' }}>Job Type</label>
+                  <select value={newJob.job_type} onChange={e => setNewJob({...newJob, job_type: e.target.value})} style={{ width: '100%', padding: '0.6rem', borderRadius: '4px', border: '1px solid var(--border-color)', background: 'var(--bg-white)', color: 'var(--text-primary)' }}>
+                    {jobTypes.map(t => <option key={t} value={t}>{t}</option>)}
+                  </select>
+                </div>
+
+                <div className="form-group">
+                  <label style={{ fontSize: '0.85rem', fontWeight: 600, display: 'block', marginBottom: '4px' }}>Location</label>
+                  <select value={newJob.location} onChange={e => setNewJob({...newJob, location: e.target.value})} style={{ width: '100%', padding: '0.6rem', borderRadius: '4px', border: '1px solid var(--border-color)', background: 'var(--bg-white)', color: 'var(--text-primary)' }}>
+                    <option value="">Select Location</option>
+                    {locations.map(l => <option key={l} value={l}>{l}</option>)}
+                  </select>
+                </div>
+
+                <div className="form-group">
+                  <label style={{ fontSize: '0.85rem', fontWeight: 600, display: 'block', marginBottom: '4px' }}>Experience Level</label>
+                  <select value={newJob.experience_level} onChange={e => setNewJob({...newJob, experience_level: e.target.value})} style={{ width: '100%', padding: '0.6rem', borderRadius: '4px', border: '1px solid var(--border-color)', background: 'var(--bg-white)', color: 'var(--text-primary)' }}>
+                    {experienceLevels.map(l => <option key={l} value={l}>{l}</option>)}
+                  </select>
+                </div>
+
+                <div className="form-group">
+                  <label style={{ fontSize: '0.85rem', fontWeight: 600, display: 'block', marginBottom: '4px' }}>Work Mode</label>
+                  <select value={newJob.work_mode} onChange={e => setNewJob({...newJob, work_mode: e.target.value})} style={{ width: '100%', padding: '0.6rem', borderRadius: '4px', border: '1px solid var(--border-color)', background: 'var(--bg-white)', color: 'var(--text-primary)' }}>
+                    {workModes.map(m => <option key={m} value={m}>{m}</option>)}
+                  </select>
+                </div>
+
+                <div className="form-group">
+                  <label style={{ fontSize: '0.85rem', fontWeight: 600, display: 'block', marginBottom: '4px' }}>Company Type</label>
+                  <input type="text" placeholder="e.g. IT Services" value={newJob.company_type} onChange={e => setNewJob({...newJob, company_type: e.target.value})} style={{ width: '100%', padding: '0.6rem', borderRadius: '4px', border: '1px solid var(--border-color)', background: 'var(--bg-white)', color: 'var(--text-primary)' }} />
+                </div>
+
+                <div style={{ gridColumn: '1 / -1', display: 'flex', gap: 'var(--spacing-md)', marginTop: 'var(--spacing-md)' }}>
+                  <button type="submit" disabled={jobCreating} className="btn btn-accent" style={{ flex: 1, padding: '0.8rem' }}>
+                    {jobCreating ? 'Processing...' : editingJob ? 'Update Job' : 'Post Job'}
+                  </button>
+                  {editingJob && (
+                    <button type="button" onClick={() => { setEditingJob(null); setNewJob({ title: '', company: '', position: '', location: '', deadline: '', status: 'active', allowed_departments: [], description: '', package: '', required_skills: '', job_type: 'Full-time', experience_level: 'Fresher', work_mode: 'On-site', company_type: 'IT Services' }); }} className="btn btn-outline" style={{ padding: '0.8rem' }}>
+                      Cancel
+                    </button>
+                  )}
+                </div>
               </form>
             </div>
 
@@ -352,7 +614,10 @@ const HODDashboard = () => {
                                   <td>{job.title}</td>
                                   <td>{new Date(job.deadline).toLocaleDateString()}</td>
                                   <td>
-                                    <button onClick={() => handleDeleteJob(job.id)} className="btn btn-outline" style={{ color: 'var(--danger)', borderColor: 'var(--danger)', padding: '0.2rem 0.5rem', fontSize: '0.8rem' }}>Delete</button>
+                                    <div style={{ display: 'flex', gap: '8px' }}>
+                                      <button onClick={() => handleEditJob(job)} className="btn btn-outline" style={{ color: 'var(--primary)', borderColor: 'var(--primary)', padding: '0.2rem 0.5rem', fontSize: '0.8rem' }}>Edit</button>
+                                      <button onClick={() => handleDeleteJob(job.id)} className="btn btn-outline" style={{ color: 'var(--danger)', borderColor: 'var(--danger)', padding: '0.2rem 0.5rem', fontSize: '0.8rem' }}>Delete</button>
+                                    </div>
                                   </td>
                               </tr>
                           ))}
@@ -383,11 +648,62 @@ const HODDashboard = () => {
                 </div>
             </div>
 
-            <div style={{ padding: 'var(--spacing-xl)', textAlign: 'center', border: '1px dashed var(--border-color)', borderRadius: 'var(--border-radius-lg)', background: 'var(--bg-light)' }}>
-                <div style={{ fontSize: '48px', marginBottom: 'var(--spacing-md)' }}>📊</div>
-                <h4 style={{ color: 'var(--text-primary)' }}>Graphical Reports Generation</h4>
-                <p style={{ color: 'var(--text-secondary)' }}>Detailed chart visualization for department placements is currently syncing data.</p>
-                <button className="btn btn-primary mt-md">Export CSV Report</button>
+            {analyticsLoading ? (
+              <div style={{ display: 'flex', justifyContent: 'center', padding: 'var(--spacing-xl)' }}>
+                <div className="login-spinner" style={{ width: '30px', height: '30px', borderWidth: '3px', borderColor: 'var(--border-color)', borderTopColor: 'var(--primary)' }}></div>
+              </div>
+            ) : deptAnalytics ? (
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--spacing-lg)' }}>
+                <div className="card" style={{ padding: 'var(--spacing-lg)' }}>
+                  <h4 style={{ marginBottom: 'var(--spacing-md)', color: 'var(--primary)' }}>Application Status Breakdown</h4>
+                  <BarChart 
+                    data={[
+                      { status: 'Applied', count: applications.filter(a => a.status === 'applied').length },
+                      { status: 'Shortlisted', count: applications.filter(a => a.status === 'shortlisted').length },
+                      { status: 'Interview', count: applications.filter(a => a.status === 'interview').length },
+                      { status: 'Selected', count: applications.filter(a => a.status === 'selected').length },
+                      { status: 'Offer', count: applications.filter(a => a.status === 'offer').length },
+                      { status: 'Rejected', count: applications.filter(a => a.status === 'rejected').length },
+                    ]} 
+                    labelKey="status" 
+                    valueKey="count" 
+                    color="var(--secondary)" 
+                  />
+                </div>
+                <div className="card" style={{ padding: 'var(--spacing-lg)' }}>
+                  <h4 style={{ marginBottom: 'var(--spacing-md)', color: 'var(--primary)' }}>Department Summary</h4>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--spacing-sm)' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                      <span style={{ color: 'var(--text-secondary)' }}>Total Students:</span>
+                      <strong>{deptAnalytics.unique_students}</strong>
+                    </div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                      <span style={{ color: 'var(--text-secondary)' }}>Total Applications:</span>
+                      <strong>{deptAnalytics.total_applications}</strong>
+                    </div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                      <span style={{ color: 'var(--text-secondary)' }}>Students Placed:</span>
+                      <strong style={{ color: 'var(--success)' }}>{deptAnalytics.placed}</strong>
+                    </div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 'var(--spacing-sm)', paddingTop: 'var(--spacing-sm)', borderTop: '1px solid var(--border-color)' }}>
+                      <span style={{ color: 'var(--text-secondary)', fontWeight: 600 }}>Placement Rate:</span>
+                      <strong style={{ color: 'var(--primary)', fontSize: 'var(--font-size-lg)' }}>
+                        {deptAnalytics.unique_students > 0 ? Math.round((deptAnalytics.placed / deptAnalytics.unique_students) * 100) : 0}%
+                      </strong>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <div style={{ padding: 'var(--spacing-xl)', textAlign: 'center', border: '1px dashed var(--border-color)', borderRadius: 'var(--border-radius-lg)', background: 'var(--bg-light)' }}>
+                  <div style={{ fontSize: '48px', marginBottom: 'var(--spacing-md)' }}>📊</div>
+                  <h4 style={{ color: 'var(--text-primary)' }}>Graphical Reports</h4>
+                  <p style={{ color: 'var(--text-secondary)' }}>Detailed analytics for {profile.department} will appear once applications are processed.</p>
+              </div>
+            )}
+            
+            <div style={{ marginTop: 'var(--spacing-xl)', textAlign: 'center' }}>
+                <button className="btn btn-primary">Export CSV Report</button>
             </div>
           </div>
         )}

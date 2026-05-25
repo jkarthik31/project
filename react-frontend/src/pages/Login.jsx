@@ -2,10 +2,11 @@ import React, { useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import './Login.css';
-import './Home.css';
 
 const Login = () => {
-  const [isSignUp, setIsSignUp] = useState(false);
+  const [searchParams] = useSearchParams();
+  const mode = searchParams.get('mode');
+  const [isSignUp, setIsSignUp] = useState(mode === 'signup');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [name, setName] = useState('');
@@ -16,8 +17,42 @@ const Login = () => {
 
   const { signIn, signUp, isLoggedIn, profile, isPending, isRejected } = useAuth();
   const navigate = useNavigate();
-  const [searchParams] = useSearchParams();
-  const roleFromUrl = searchParams.get('role') || 'student';
+  const requestedRole = searchParams.get('role') || 'student';
+  const roleFromUrl = ['student', 'teacher', 'hod', 'admin'].includes(requestedRole) ? requestedRole : 'student';
+  const roleLabel = roleFromUrl === 'hod' ? 'HOD' : roleFromUrl.charAt(0).toUpperCase() + roleFromUrl.slice(1);
+  const roleInitial = roleFromUrl === 'admin' ? 'A' : roleFromUrl === 'hod' ? 'H' : roleFromUrl === 'teacher' ? 'T' : 'S';
+
+  const setRole = (role) => {
+    setError('');
+    setSuccess('');
+    setDepartment('');
+    if (role === 'admin') setIsSignUp(false);
+    navigate(`/?role=${role}`, { replace: true });
+  };
+
+  const handlePageMouseMove = (e) => {
+    const rect = e.currentTarget.getBoundingClientRect();
+    e.currentTarget.style.setProperty('--page-x', `${e.clientX - rect.left}px`);
+    e.currentTarget.style.setProperty('--page-y', `${e.clientY - rect.top}px`);
+  };
+
+  const handleCardMouseMove = (e) => {
+    const rect = e.currentTarget.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
+    const rotateX = ((y / rect.height) - 0.5) * -6;
+    const rotateY = ((x / rect.width) - 0.5) * 6;
+
+    e.currentTarget.style.setProperty('--mouse-x', `${x}px`);
+    e.currentTarget.style.setProperty('--mouse-y', `${y}px`);
+    e.currentTarget.style.setProperty('--rotate-x', `${rotateX}deg`);
+    e.currentTarget.style.setProperty('--rotate-y', `${rotateY}deg`);
+  };
+
+  const handleCardMouseLeave = (e) => {
+    e.currentTarget.style.setProperty('--rotate-x', '0deg');
+    e.currentTarget.style.setProperty('--rotate-y', '0deg');
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -77,6 +112,12 @@ const Login = () => {
 
   // Auto-redirect once logged in and profile is loaded
   React.useEffect(() => {
+    if (roleFromUrl === 'admin' && isSignUp) {
+      setIsSignUp(false);
+    }
+  }, [roleFromUrl, isSignUp]);
+
+  React.useEffect(() => {
     if (isLoggedIn && profile) {
       // Check approval status before redirecting to dashboard
       if (isPending || isRejected) {
@@ -95,27 +136,81 @@ const Login = () => {
 
 
   return (
-    <>
-      <section className="hero">
-        <div className="video-container">
-          <video autoPlay muted loop>
-            <source src="/assets/images/Cinematic_College_Placement_Video_Generation.mp4" type="video/mp4" />
-          </video>
+    <section className="login-page" onMouseMove={handlePageMouseMove}>
+      <div className="login-particles" aria-hidden="true">
+        {Array.from({ length: 16 }).map((_, index) => (
+          <span key={index} />
+        ))}
+      </div>
+      <div
+        className="login-shell"
+        onMouseMove={handleCardMouseMove}
+        onMouseLeave={handleCardMouseLeave}
+      >
+        <div className="login-side-panel">
+          <div>
+            <div className="login-brand-mark">CN</div>
+            <h1>Campus Nexus</h1>
+            <p>Access placements, approvals, and student progress from one secure portal.</p>
+          </div>
+
+          <div className="login-role-section">
+            <span className="login-section-label">Choose access</span>
+            <div className="login-role-grid">
+              <button
+                type="button"
+                className={`login-role-option ${roleFromUrl === 'student' ? 'active' : ''}`}
+                onClick={() => setRole('student')}
+              >
+                Student
+              </button>
+              <button
+                type="button"
+                className={`login-role-option ${roleFromUrl === 'admin' ? 'active' : ''}`}
+                onClick={() => setRole('admin')}
+              >
+                Admin
+              </button>
+            </div>
+
+            <div className="login-college-section">
+              <div className="login-college-heading">
+                <span>College</span>
+                <small>Faculty access</small>
+              </div>
+              <div className="login-role-grid">
+                <button
+                  type="button"
+                  className={`login-role-option ${roleFromUrl === 'teacher' ? 'active' : ''}`}
+                  onClick={() => setRole('teacher')}
+                >
+                  Teacher
+                </button>
+                <button
+                  type="button"
+                  className={`login-role-option ${roleFromUrl === 'hod' ? 'active' : ''}`}
+                  onClick={() => setRole('hod')}
+                >
+                  HOD
+                </button>
+              </div>
+            </div>
+          </div>
         </div>
-        <div className="hero-content" style={{ display: 'flex', justifyContent: 'center', width: '100%', maxWidth: '1200px' }}>
-          
-          {/* Left side text content - optional, or just center the login box. Let's just center the login box for now. */}
-          <div className="login-card glass-card" style={{ zIndex: 10, position: 'relative', width: '100%', maxWidth: '440px', background: 'var(--navbar-bg)', backdropFilter: 'blur(16px)', marginTop: '60px' }}>
-            {/* Role Badge */}
-            <div className="login-role-badge">
-              {roleFromUrl === 'admin' ? 'A' : roleFromUrl === 'hod' ? 'H' : roleFromUrl === 'teacher' ? 'T' : 'S'}
+
+        <div className="login-card">
+            <div className="login-header">
+              <div className="login-role-badge">
+              {roleInitial}
+              </div>
+              <span className="login-role-pill">{roleLabel}</span>
             </div>
 
             <h2 className="login-title">
-              {isSignUp ? 'Create Account' : `${roleFromUrl.charAt(0).toUpperCase() + roleFromUrl.slice(1)} Login`}
+              {isSignUp ? 'Create account' : 'Welcome back'}
             </h2>
             <p className="login-subtitle">
-              {isSignUp ? 'Join Campus Nexus Placement Portal' : 'Sign in to your account'}
+              {isSignUp ? `Register as ${roleLabel} for Campus Nexus.` : `Sign in to continue as ${roleLabel}.`}
             </p>
 
             {/* Approval notice for signup */}
@@ -124,7 +219,7 @@ const Login = () => {
                 background: 'rgba(245, 158, 11, 0.08)',
                 border: '1px solid rgba(245, 158, 11, 0.25)',
                 borderRadius: 'var(--border-radius)',
-                padding: 'var(--spacing-sm) var(--spacing-md)',
+                padding: '10px 12px',
                 marginBottom: 'var(--spacing-md)',
                 fontSize: 'var(--font-size-xs)',
                 color: 'var(--warning)',
@@ -144,7 +239,7 @@ const Login = () => {
               </div>
             )}
             {success && (
-              <div className="alert alert-success animate-fade-in" style={{ marginTop: 'var(--spacing-md)' }}>
+              <div className="alert alert-success animate-fade-in" style={{ marginBottom: 'var(--spacing-md)' }}>
                 <span></span> {success}
               </div>
             )}
@@ -193,10 +288,10 @@ const Login = () => {
                   <select value={department} onChange={e => setDepartment(e.target.value)} required>
                     <option value="">Select Department</option>
                     <option value="BCA">BCA</option>
-                    <option value="BCOM">BCOM</option>
                     <option value="BBA">BBA</option>
-                    <option value="BSC">BSC</option>
                     <option value="BA">BA</option>
+                    <option value="BCom">BCom</option>
+                    <option value="BSC">BSC</option>
                   </select>
                 </div>
               )}
@@ -211,20 +306,34 @@ const Login = () => {
             </form>
 
             {/* Toggle between Sign In / Sign Up */}
-            <div className="login-toggle">
-              <span>{isSignUp ? 'Already have an account?' : "Don't have an account?"}</span>
-              <button
-                type="button"
-                onClick={() => { setIsSignUp(!isSignUp); setError(''); setSuccess(''); }}
-                className="login-toggle-btn"
-              >
-                {isSignUp ? 'Sign In' : 'Sign Up'}
-              </button>
-            </div>
-          </div>
+            {roleFromUrl !== 'admin' && (
+              <div className="login-toggle">
+                <span>{isSignUp ? 'Already have an account?' : "Don't have an account?"}</span>
+                <button
+                  type="button"
+                  onClick={() => { setIsSignUp(!isSignUp); setError(''); setSuccess(''); }}
+                  className="login-toggle-btn"
+                >
+                  {isSignUp ? 'Sign In' : 'Sign Up'}
+                </button>
+              </div>
+            )}
+            
+            {roleFromUrl === 'admin' && isSignUp && (
+              <div className="login-toggle">
+                <span>Already have an account?</span>
+                <button
+                  type="button"
+                  onClick={() => { setIsSignUp(false); setError(''); setSuccess(''); }}
+                  className="login-toggle-btn"
+                >
+                  Sign In
+                </button>
+              </div>
+            )}
         </div>
-      </section>
-    </>
+      </div>
+    </section>
   );
 };
 

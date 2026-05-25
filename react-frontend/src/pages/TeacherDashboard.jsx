@@ -6,15 +6,25 @@ import './AdminDashboard.css';
 
 const TeacherDashboard = () => {
   const { user, profile, isLoggedIn, loading: authLoading } = useAuth();
-  const { getDashboardStats, getApplications, updateApplicationStatus, getProfilesByDepartment } = useData();
+  const { getDashboardStats, getApplications, updateApplicationStatus, getProfilesByDepartment, updateProfileVerification } = useData();
   const navigate = useNavigate();
   
   const [activeTab, setActiveTab] = useState('dashboard');
-  const [, setStats] = useState({ totalStudents: 0, totalApplications: 0 });
+  const [stats, setStats] = useState({ totalStudents: 0, totalApplications: 0 });
   const [applications, setApplications] = useState([]);
   const [students, setStudents] = useState([]);
   const [loading, setLoading] = useState(true);
   const [pendingStatusUpdates, setPendingStatusUpdates] = useState({});
+
+  // Verification state
+  const [verifyingStudent, setVerifyingStudent] = useState(null);
+  const [verificationForm, setVerificationForm] = useState({
+    resume_status: '',
+    resume_remarks: '',
+    eligibility_status: '',
+    eligibility_remarks: ''
+  });
+  const [isUpdating, setIsUpdating] = useState(false);
 
   useEffect(() => {
     if (!authLoading && !isLoggedIn) {
@@ -22,26 +32,25 @@ const TeacherDashboard = () => {
     }
   }, [authLoading, isLoggedIn, navigate]);
 
+  const loadData = async () => {
+    if (user && profile) {
+      const dashStats = await getDashboardStats();
+      setStats(dashStats);
+      
+      const apps = await getApplications();
+      setApplications(apps);
+      
+      // Get students from own department only
+      const studentData = await getProfilesByDepartment(profile.department);
+      setStudents(studentData.filter(p => p.role === 'student'));
+      
+      setLoading(false);
+    }
+  };
+
   useEffect(() => {
-    const loadData = async () => {
-      if (user) {
-        const dashStats = await getDashboardStats();
-        setStats(dashStats);
-        
-        const apps = await getApplications();
-        setApplications(apps);
-        
-        // Get students from own department only
-        const studentData = profile?.department
-          ? await getProfilesByDepartment(profile.department)
-          : [];
-        setStudents(studentData.filter(p => p.role === 'student'));
-        
-        setLoading(false);
-      }
-    };
     loadData();
-  }, [user]);
+  }, [user, profile]);
 
   const handleUpdateAppStatus = async (appId) => {
     const newStatus = pendingStatusUpdates[appId];
@@ -57,6 +66,36 @@ const TeacherDashboard = () => {
       delete updatedPending[appId];
       setPendingStatusUpdates(updatedPending);
     }
+  };
+
+  const handleOpenVerification = (student) => {
+    setVerifyingStudent(student);
+    setVerificationForm({
+      resume_status: student.resume_status || 'Pending',
+      resume_remarks: student.resume_remarks || '',
+      eligibility_status: student.eligibility_status || 'Training Pending',
+      eligibility_remarks: student.eligibility_remarks || ''
+    });
+  };
+
+  const handleUpdateVerification = async (e) => {
+    e.preventDefault();
+    setIsUpdating(true);
+    const { error } = await updateProfileVerification(verifyingStudent.id, verificationForm);
+    if (!error) {
+      setStudents(students.map(s => s.id === verifyingStudent.id ? { ...s, ...verificationForm } : s));
+      setVerifyingStudent(null);
+      
+      // Force reload data to ensure all components are in sync
+      setTimeout(() => {
+        loadData();
+      }, 500);
+      
+      alert('Verification updated successfully!');
+    } else {
+      alert(error.message);
+    }
+    setIsUpdating(false);
   };
 
   if (authLoading || loading) {
@@ -80,11 +119,12 @@ const TeacherDashboard = () => {
   return (
     <div className="admin-dashboard-container">
       {/* Sidebar */}
-      <aside className="admin-sidebar" style={{ background: 'var(--primary)' }}>
+      <aside className="admin-sidebar">
         <ul className="admin-menu">
             <li><button className={activeTab === 'dashboard' ? 'active' : ''} onClick={() => setActiveTab('dashboard')}>Dashboard</button></li>
             <li><button className={activeTab === 'students' ? 'active' : ''} onClick={() => setActiveTab('students')}>Students</button></li>
-            <li><button className={activeTab === 'evaluations' ? 'active' : ''} onClick={() => setActiveTab('evaluations')}>Evaluations</button></li>
+            <li><button className={activeTab === 'verifications' ? 'active' : ''} onClick={() => setActiveTab('verifications')}>Verification & Eligibility</button></li>
+            <li><button className={activeTab === 'evaluations' ? 'active' : ''} onClick={() => setActiveTab('evaluations')}>Application Tracking</button></li>
         </ul>
       </aside>
 
@@ -113,16 +153,18 @@ const TeacherDashboard = () => {
         {/* Dynamic Tab Content */}
         {activeTab === 'dashboard' && (
           <div className="admin-tab-content">
-            {/* Statistics */}
             <div className="admin-stats-grid">
                 <div className="admin-stat-card">
-                    <div style={{ color: 'var(--text-muted)', fontSize: 'var(--font-size-sm)', textTransform: 'uppercase', fontWeight: 600 }}>Total Students</div>
+                    <div style={{ color: 'var(--text-muted)', fontSize: 'var(--font-size-sm)', textTransform: 'uppercase', fontWeight: 600 }}>My Students</div>
                     <div style={{ fontSize: 'var(--font-size-2xl)', fontWeight: 700, color: 'var(--primary)' }}>{students.length}</div>
                 </div>
-                
-                <div className="admin-stat-card">
-                    <div style={{ color: 'var(--text-muted)', fontSize: 'var(--font-size-sm)', textTransform: 'uppercase', fontWeight: 600 }}>Pending Evaluations</div>
-                    <div style={{ fontSize: 'var(--font-size-2xl)', fontWeight: 700, color: 'var(--primary)' }}>{applications.filter(a => a.status === 'applied').length}</div>
+                <div className="admin-stat-card" style={{ borderLeftColor: 'var(--warning)' }}>
+                    <div style={{ color: 'var(--text-muted)', fontSize: 'var(--font-size-sm)', textTransform: 'uppercase', fontWeight: 600 }}>Active Applications</div>
+                    <div style={{ fontSize: 'var(--font-size-2xl)', fontWeight: 700, color: 'var(--warning)' }}>{applications.length}</div>
+                </div>
+                <div className="admin-stat-card" style={{ borderLeftColor: 'var(--success)' }}>
+                    <div style={{ color: 'var(--text-muted)', fontSize: 'var(--font-size-sm)', textTransform: 'uppercase', fontWeight: 600 }}>Verified Resumes</div>
+                    <div style={{ fontSize: 'var(--font-size-2xl)', fontWeight: 700, color: 'var(--success)' }}>{students.filter(s => s.resume_status === 'Approved').length}</div>
                 </div>
             </div>
           </div>
@@ -137,40 +179,29 @@ const TeacherDashboard = () => {
                     <thead>
                         <tr>
                             <th>Name</th>
-                            <th>Company Applied</th>
-                            <th>Status</th>
+                            <th>Email</th>
+                            <th>CGPA</th>
                             <th>Action</th>
                         </tr>
                     </thead>
                     <tbody>
-                        {students.length > 0 ? students.map(student => {
-                            const studentApps = applications.filter(a => a.student_id === student.id || a.student_email === student.email);
-                            return (
+                        {students.length > 0 ? students.map(student => (
                             <tr key={student.id}>
-                                <td>{student.name || 'Unnamed Student'}</td>
+                                <td style={{ fontWeight: 600 }}>{student.name}</td>
+                                <td>{student.email}</td>
+                                <td>{student.cgpa || 'N/A'}</td>
                                 <td>
-                                  {studentApps.length > 0 
-                                    ? studentApps.map((a, i) => <div key={i}>{a.company || a.jobs?.company || 'Unknown Company'}</div>) 
-                                    : <span style={{ color: 'var(--text-muted)' }}>Not applied</span>}
-                                </td>
-                                <td>
-                                  {studentApps.length > 0 
-                                    ? studentApps.map((a, i) => (
-                                        <div key={i} style={{ marginBottom: '4px' }}>
-                                          <span className={`badge badge-${a.status === 'applied' ? 'info' : a.status === 'selected' ? 'success' : a.status === 'rejected' ? 'danger' : 'warning'}`}>
-                                            {a.status.toUpperCase()}
-                                          </span>
-                                        </div>
-                                      ))
-                                    : '-'}
-                                </td>
-                                <td>
-                                  <button className="btn btn-ghost btn-sm" style={{ padding: '0.2rem 0.5rem', fontSize: '0.8rem', color: 'var(--info)' }}>View Profile</button>
+                                  <button 
+                                    className="btn btn-ghost btn-sm" 
+                                    style={{ color: 'var(--info)' }}
+                                    onClick={() => navigate(`/profile/${student.id}`)}
+                                  >
+                                    View Profile
+                                  </button>
                                 </td>
                             </tr>
-                            );
-                        }) : (
-                            <tr><td colSpan="4" style={{ textAlign: 'center', padding: 'var(--spacing-xl)' }}>No students found.</td></tr>
+                        )) : (
+                            <tr><td colSpan="4" style={{ textAlign: 'center', padding: 'var(--spacing-xl)' }}>No students found in your department.</td></tr>
                         )}
                     </tbody>
                 </table>
@@ -178,61 +209,80 @@ const TeacherDashboard = () => {
           </div>
         )}
 
-        {/* EVALUATIONS TAB */}
+        {/* VERIFICATIONS TAB */}
+        {activeTab === 'verifications' && (
+          <div className="admin-section">
+            <h3 style={{ margin: '0 0 var(--spacing-lg) 0', color: 'var(--primary)' }}>Resume Verification & Eligibility</h3>
+            <div style={{ overflowX: 'auto' }}>
+                <table className="admin-table">
+                    <thead>
+                        <tr>
+                            <th>Student</th>
+                            <th>Resume Status</th>
+                            <th>Eligibility</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {students.length > 0 ? students.map(student => (
+                            <tr key={student.id}>
+                                <td>
+                                  <div style={{ fontWeight: 600 }}>{student.name}</div>
+                                  <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>{student.email}</div>
+                                </td>
+                                <td>
+                                  <span className={`badge badge-${student.resume_status === 'Approved' ? 'success' : student.resume_status === 'Needs Revision' ? 'danger' : 'warning'}`}>
+                                    {(student.resume_status || 'Pending').toUpperCase()}
+                                  </span>
+                                  {student.resume_remarks && <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', marginTop: '4px', maxWidth: '150px' }}>"{student.resume_remarks}"</div>}
+                                </td>
+                                <td>
+                                  <span className={`badge badge-${student.eligibility_status === 'Eligible for Placement' ? 'success' : student.eligibility_status === 'Not Eligible' ? 'danger' : 'info'}`}>
+                                    {(student.eligibility_status || 'Training Pending').toUpperCase()}
+                                  </span>
+                                </td>
+                                <td>
+                                  <button className="btn btn-primary btn-sm" onClick={() => handleOpenVerification(student)}>Verify</button>
+                                </td>
+                            </tr>
+                        )) : (
+                            <tr><td colSpan="4" style={{ textAlign: 'center' }}>No students found.</td></tr>
+                        )}
+                    </tbody>
+                </table>
+            </div>
+          </div>
+        )}
+
+        {/* EVALUATIONS TAB (renamed to Application Tracking) */}
         {activeTab === 'evaluations' && (
           <div className="admin-section">
-            <h3 style={{ margin: '0 0 var(--spacing-lg) 0', color: 'var(--primary)' }}>My Mentee Updates & Evaluations</h3>
+            <h3 style={{ margin: '0 0 var(--spacing-lg) 0', color: 'var(--primary)' }}>Department Application Status Tracking</h3>
             <div style={{ overflowX: 'auto' }}>
                 <table className="admin-table">
                     <thead>
                         <tr>
                             <th>Student Name</th>
-                            <th>Email</th>
                             <th>Application Details</th>
-                            <th>Status Action</th>
+                            <th>Status</th>
                         </tr>
                     </thead>
                     <tbody>
                         {applications.length > 0 ? applications.map(app => (
                             <tr key={app.id}>
-                                <td>{app.student_name || 'Student'}</td>
-                                <td>{app.student_email || 'No email'}</td>
-                                <td>Applied to <strong>{app.company || app.jobs?.company}</strong> for {app.job_title || app.jobs?.title}</td>
                                 <td>
-                                  <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
-                                    <select 
-                                      value={pendingStatusUpdates[app.id] || app.status} 
-                                      onChange={(e) => setPendingStatusUpdates({ ...pendingStatusUpdates, [app.id]: e.target.value })}
-                                      style={{ 
-                                        padding: '0.2rem 0.5rem', 
-                                        borderRadius: '4px', 
-                                        border: '1px solid var(--border-color)', 
-                                        background: 'var(--bg-white)', 
-                                        color: 'var(--text-primary)' 
-                                      }}
-                                    >
-                                      <option value="applied">Applied</option>
-                                      <option value="shortlisted">Shortlisted</option>
-                                      <option value="interview">Interview</option>
-                                      <option value="selected">Selected</option>
-                                      <option value="offer">Offer</option>
-                                      <option value="rejected">Rejected</option>
-                                    </select>
-                                    
-                                    {pendingStatusUpdates[app.id] && pendingStatusUpdates[app.id] !== app.status && (
-                                      <button 
-                                        onClick={() => handleUpdateAppStatus(app.id)}
-                                        className="btn btn-accent btn-sm"
-                                        style={{ padding: '0.2rem 0.5rem', fontSize: '0.8rem' }}
-                                      >
-                                        Apply
-                                      </button>
-                                    )}
-                                  </div>
+                                  <div style={{ fontWeight: 600 }}>{app.student_name}</div>
+                                  <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>{app.student_email}</div>
+                                </td>
+                                <td>Applied to <strong>{app.company}</strong> for {app.job_title}</td>
+                                <td>
+                                  <span className={`badge badge-${app.status === 'applied' ? 'info' : app.status === 'selected' || app.status === 'offer' ? 'success' : app.status === 'rejected' ? 'danger' : 'warning'}`}>
+                                    {app.status.toUpperCase()}
+                                  </span>
                                 </td>
                             </tr>
                         )) : (
-                            <tr><td colSpan="4" style={{ textAlign: 'center', padding: 'var(--spacing-xl)' }}>No applications found.</td></tr>
+                            <tr><td colSpan="3" style={{ textAlign: 'center', padding: 'var(--spacing-xl)' }}>No active applications for your department.</td></tr>
                         )}
                     </tbody>
                 </table>
@@ -241,6 +291,48 @@ const TeacherDashboard = () => {
         )}
 
       </main>
+
+      {/* Verification Modal - Moved outside main for better visibility */}
+      {verifyingStudent && (
+        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.7)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 9999, backdropFilter: 'blur(4px)' }}>
+          <div style={{ background: 'var(--bg-white)', borderRadius: 'var(--border-radius-lg)', padding: 'var(--spacing-xl)', maxWidth: '500px', width: '90%', boxShadow: 'var(--shadow-xl)', border: '1px solid var(--border-color)', position: 'relative' }}>
+            <button onClick={() => setVerifyingStudent(null)} style={{ position: 'absolute', top: '15px', right: '15px', background: 'none', border: 'none', fontSize: '1.5rem', cursor: 'pointer', color: 'var(--text-muted)' }}>&times;</button>
+            <h3 style={{ margin: '0 0 var(--spacing-md)', color: 'var(--primary)', borderBottom: '1px solid var(--border-color)', paddingBottom: '10px' }}>Verification: {verifyingStudent.name}</h3>
+            <form onSubmit={handleUpdateVerification}>
+              <div className="form-group" style={{ marginBottom: 'var(--spacing-md)' }}>
+                <label style={{ display: 'block', marginBottom: '6px', fontWeight: 600, fontSize: '0.9rem' }}>Resume Status</label>
+                <select value={verificationForm.resume_status} onChange={e => setVerificationForm({...verificationForm, resume_status: e.target.value})} style={{ width: '100%', padding: '0.7rem', borderRadius: '6px', border: '1px solid var(--border-color)', background: 'var(--bg-white)', color: 'var(--text-primary)' }}>
+                  <option value="Pending">Pending</option>
+                  <option value="Approved">Approved</option>
+                  <option value="Needs Revision">Needs Revision</option>
+                </select>
+              </div>
+              <div className="form-group" style={{ marginBottom: 'var(--spacing-md)' }}>
+                <label style={{ display: 'block', marginBottom: '6px', fontWeight: 600, fontSize: '0.9rem' }}>Resume Remarks</label>
+                <textarea value={verificationForm.resume_remarks} onChange={e => setVerificationForm({...verificationForm, resume_remarks: e.target.value})} placeholder="Feedback for the student..." rows={3} style={{ width: '100%', padding: '0.7rem', borderRadius: '6px', border: '1px solid var(--border-color)', background: 'var(--bg-white)', color: 'var(--text-primary)', resize: 'vertical' }} />
+              </div>
+              <div className="form-group" style={{ marginBottom: 'var(--spacing-md)' }}>
+                <label style={{ display: 'block', marginBottom: '6px', fontWeight: 600, fontSize: '0.9rem' }}>Placement Eligibility</label>
+                <select value={verificationForm.eligibility_status} onChange={e => setVerificationForm({...verificationForm, eligibility_status: e.target.value})} style={{ width: '100%', padding: '0.7rem', borderRadius: '6px', border: '1px solid var(--border-color)', background: 'var(--bg-white)', color: 'var(--text-primary)' }}>
+                  <option value="Eligible for Placement">Eligible for Placement</option>
+                  <option value="Not Eligible">Not Eligible</option>
+                  <option value="Training Pending">Training Pending</option>
+                </select>
+              </div>
+              <div className="form-group" style={{ marginBottom: 'var(--spacing-xl)' }}>
+                <label style={{ display: 'block', marginBottom: '6px', fontWeight: 600, fontSize: '0.9rem' }}>Eligibility Remarks</label>
+                <textarea value={verificationForm.eligibility_remarks} onChange={e => setVerificationForm({...verificationForm, eligibility_remarks: e.target.value})} placeholder="Reasoning for eligibility status..." rows={2} style={{ width: '100%', padding: '0.7rem', borderRadius: '6px', border: '1px solid var(--border-color)', background: 'var(--bg-white)', color: 'var(--text-primary)', resize: 'vertical' }} />
+              </div>
+              <div style={{ display: 'flex', gap: 'var(--spacing-md)', justifyContent: 'flex-end', borderTop: '1px solid var(--border-color)', paddingTop: '15px' }}>
+                <button type="button" onClick={() => setVerifyingStudent(null)} className="btn btn-ghost">Cancel</button>
+                <button type="submit" disabled={isUpdating} className="btn btn-primary" style={{ minWidth: '140px' }}>
+                  {isUpdating ? 'Saving...' : 'Update Status'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

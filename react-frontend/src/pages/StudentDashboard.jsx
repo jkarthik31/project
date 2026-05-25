@@ -114,6 +114,8 @@ const StudentDashboard = () => {
   const [dataLoading, setDataLoading] = useState(true);
   const [applyingTo, setApplyingTo] = useState(null);
   const [applyMsg, setApplyMsg] = useState('');
+  const [filterStatus, setFilterStatus] = useState('all');
+  const [selectedJob, setSelectedJob] = useState(null);
 
   useEffect(() => {
     if (!authLoading && !isLoggedIn) navigate('/');
@@ -174,13 +176,14 @@ const StudentDashboard = () => {
 
   const shortlistedCount = applications.filter(a => a.status === 'shortlisted').length;
   const selectedCount = applications.filter(a => ['selected', 'offer'].includes(a.status)).length;
+  const interviewCount = applications.filter(a => a.status === 'interview').length;
   const profileFields = ['name', 'email', 'phone', 'department', 'skills', 'cgpa', 'resume_url'];
   const completionPercentage = Math.round(
     (profileFields.filter(f => profile[f]).length / profileFields.length) * 100
   );
 
   return (
-    <div style={{ padding: 'var(--spacing-xl) var(--spacing-md)', maxWidth: '1200px', margin: '0 auto' }}>
+    <div className="page-shell">
 
       {/* Header */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 'var(--spacing-xl)', flexWrap: 'wrap', gap: 'var(--spacing-md)' }}>
@@ -204,8 +207,9 @@ const StudentDashboard = () => {
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: 'var(--spacing-lg)', marginBottom: 'var(--spacing-xl)' }}>
         {[
           { label: 'Applications', value: applications.length, color: 'var(--primary)' },
-          { label: 'Shortlisted', value: shortlistedCount, color: 'var(--warning)' },
-          { label: 'Offers', value: selectedCount, color: 'var(--success)' },
+          {label: 'Shortlisted', value: shortlistedCount, color: 'var(--warning)' },
+          {label: 'Interviews', value: interviewCount, color: 'var(--info)' },
+          {label: 'Offers', value: selectedCount, color: 'var(--success)' },
           { label: 'Saved Jobs', value: savedJobs.length, color: 'var(--secondary)' },
           { label: 'Profile %', value: `${completionPercentage}%`, color: completionPercentage < 70 ? 'var(--danger)' : 'var(--success)' },
         ].map(s => (
@@ -309,14 +313,28 @@ const StudentDashboard = () => {
         {/* Left column */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--spacing-xl)' }}>
 
-          {/* Application Progress Tracker */}
+        {/* Application Progress Tracker */}
           <div className="card">
             <h3 style={{ borderBottom: '1px solid var(--border-color)', paddingBottom: 'var(--spacing-md)', marginBottom: 'var(--spacing-lg)' }}>
               📋 Application Progress Tracker
             </h3>
-            {applications.length > 0 ? (
+            
+            <div style={{ display: 'flex', gap: '8px', marginBottom: 'var(--spacing-lg)', flexWrap: 'wrap' }}>
+              {['all', 'applied', 'shortlisted', 'interview', 'selected', 'rejected'].map(s => (
+                <button
+                  key={s}
+                  onClick={() => setFilterStatus(s)}
+                  className={`btn btn-sm ${filterStatus === s ? 'btn-primary' : 'btn-outline'}`}
+                  style={{ textTransform: 'capitalize' }}
+                >
+                  {s} ({s === 'all' ? applications.length : applications.filter(a => a.status === s).length})
+                </button>
+              ))}
+            </div>
+
+            {applications.filter(a => filterStatus === 'all' || a.status === filterStatus).length > 0 ? (
               <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--spacing-lg)' }}>
-                {applications.map(app => (
+                {applications.filter(a => filterStatus === 'all' || a.status === filterStatus).map(app => (
                   <div key={app.id} style={{
                     border: '1px solid var(--border-color)',
                     borderRadius: 'var(--border-radius-lg)',
@@ -332,6 +350,12 @@ const StudentDashboard = () => {
                           {app.jobs?.position || app.position} · Applied {new Date(app.applied_at).toLocaleDateString()}
                         </div>
                       </div>
+                      <button 
+                        onClick={() => setSelectedJob(app.jobs)} 
+                        className="btn btn-sm btn-outline"
+                      >
+                        View Details
+                      </button>
                     </div>
                     <StatusTimeline currentStatus={app.status} />
                   </div>
@@ -339,7 +363,7 @@ const StudentDashboard = () => {
               </div>
             ) : (
               <div style={{ textAlign: 'center', padding: 'var(--spacing-xl) 0', color: 'var(--text-muted)' }}>
-                No applications yet. <a href="/jobs" style={{ color: 'var(--secondary)' }}>Browse available jobs →</a>
+                No applications {filterStatus !== 'all' ? `marked as ${filterStatus}` : 'yet'}. <a href="/jobs" style={{ color: 'var(--secondary)' }}>Browse available jobs →</a>
               </div>
             )}
           </div>
@@ -438,6 +462,45 @@ const StudentDashboard = () => {
 
         </div>
       </div>
+
+      {/* Job Details Modal */}
+      {selectedJob && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.7)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 9999, backdropFilter: 'blur(4px)' }}>
+          <div style={{ background: 'var(--bg-white)', borderRadius: 'var(--border-radius-lg)', padding: 'var(--spacing-xl)', maxWidth: '600px', width: '90%', maxHeight: '90vh', overflowY: 'auto', boxShadow: 'var(--shadow-xl)', border: '1px solid var(--border-color)', position: 'relative' }}>
+            <button onClick={() => setSelectedJob(null)} style={{ position: 'absolute', top: '15px', right: '15px', background: 'none', border: 'none', fontSize: '1.5rem', cursor: 'pointer', color: 'var(--text-muted)' }}>&times;</button>
+            <h2 style={{ margin: '0 0 var(--spacing-sm)', color: 'var(--primary)' }}>{selectedJob.title}</h2>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--spacing-md)', marginBottom: 'var(--spacing-lg)', color: 'var(--text-secondary)' }}>
+              <strong>{selectedJob.company}</strong>
+              <span>📍 {selectedJob.location || 'Remote'}</span>
+            </div>
+            
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--spacing-md)', marginBottom: 'var(--spacing-lg)' }}>
+              <div style={{ background: 'var(--bg-light)', padding: 'var(--spacing-sm) var(--spacing-md)', borderRadius: '8px' }}>
+                <div style={{ fontSize: '12px', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: 700 }}>Package</div>
+                <div style={{ fontWeight: 600, color: 'var(--secondary)' }}>{selectedJob.package || 'Not specified'}</div>
+              </div>
+              <div style={{ background: 'var(--bg-light)', padding: 'var(--spacing-sm) var(--spacing-md)', borderRadius: '8px' }}>
+                <div style={{ fontSize: '12px', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: 700 }}>Deadline</div>
+                <div style={{ fontWeight: 600, color: 'var(--primary)' }}>{new Date(selectedJob.deadline).toLocaleDateString()}</div>
+              </div>
+            </div>
+
+            <h4 style={{ color: 'var(--primary)', marginBottom: 'var(--spacing-xs)' }}>Description</h4>
+            <p style={{ lineHeight: 1.6, color: 'var(--text-primary)', marginBottom: 'var(--spacing-md)' }}>{selectedJob.description || 'No description provided.'}</p>
+            
+            {selectedJob.requirements && (
+              <>
+                <h4 style={{ color: 'var(--primary)', marginBottom: 'var(--spacing-xs)' }}>Requirements</h4>
+                <p style={{ lineHeight: 1.6, color: 'var(--text-primary)', marginBottom: 'var(--spacing-md)' }}>{selectedJob.requirements}</p>
+              </>
+            )}
+
+            <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 'var(--spacing-lg)', borderTop: '1px solid var(--border-color)', paddingTop: 'var(--spacing-md)' }}>
+              <button onClick={() => setSelectedJob(null)} className="btn btn-primary">Close</button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

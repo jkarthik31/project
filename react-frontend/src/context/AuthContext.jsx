@@ -141,10 +141,12 @@ export const AuthProvider = ({ children }) => {
     setProfile(null);
   };
 
-  const updateProfile = async (updates) => {
-    if (!token || !profile) return { error: { message: 'Not authenticated' } };
+  const updateProfile = async (targetId, updates) => {
+    // If targetId is not provided, use own profile id
+    const id = targetId || profile?.id;
+    if (!token || !id) return { error: { message: 'Not authenticated' } };
     try {
-      const res = await fetch(`${API}/profiles/${profile.id}`, {
+      const res = await fetch(`${API}/profiles/${id}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -155,8 +157,11 @@ export const AuthProvider = ({ children }) => {
       const data = await res.json();
       if (!res.ok) return { error: { message: data.error } };
 
-      saveLocal(token, data.profile);
-      setProfile(data.profile);
+      // Only update local state if we updated our own profile
+      if (id === profile?.id) {
+        saveLocal(token, data.profile);
+        setProfile(data.profile);
+      }
       return { data: data.profile, error: null };
     } catch {
       return { error: { message: 'Server error.' } };

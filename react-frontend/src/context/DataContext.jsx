@@ -118,7 +118,12 @@ export const DataProvider = ({ children }) => {
         method: 'POST',
         body: JSON.stringify({ job_id: jobId }),
       });
-      return { data: data.application, error: null };
+      const app = data.application;
+      const mappedApp = {
+        ...app,
+        jobs: { company: app.company, position: app.position, title: app.job_title },
+      };
+      return { data: mappedApp, error: null };
     } catch (err) { return { data: null, error: { message: err.message } }; }
   };
 
@@ -140,6 +145,23 @@ export const DataProvider = ({ children }) => {
       const data = await apiFetch('/profiles', token);
       return data.profiles || [];
     } catch (err) { console.error(err); return []; }
+  };
+
+  const getProfileById = async (id) => {
+    try {
+      const data = await apiFetch(`/profiles/${id}`, token);
+      return data.profile;
+    } catch (err) { console.error(err); return null; }
+  };
+
+  const updateProfileVerification = async (id, verificationData) => {
+    try {
+      const data = await apiFetch(`/profiles/${id}/verification`, token, {
+        method: 'PATCH',
+        body: JSON.stringify(verificationData),
+      });
+      return { data, error: null };
+    } catch (err) { return { data: null, error: { message: err.message } }; }
   };
 
   const getProfilesByRole = async (role) => {
@@ -166,6 +188,13 @@ export const DataProvider = ({ children }) => {
     } catch (err) { return { error: { message: err.message } }; }
   };
 
+  const deleteProfile = async (id) => {
+    try {
+      await apiFetch(`/profiles/${id}`, token, { method: 'DELETE' });
+      return { error: null };
+    } catch (err) { return { error: { message: err.message } }; }
+  };
+
   // ========================
   // STATS
   // ========================
@@ -173,7 +202,7 @@ export const DataProvider = ({ children }) => {
     try {
       const data = await apiFetch('/stats', token);
       return data;
-    } catch { return { totalStudents: 0, totalJobs: 0, totalApplications: 0, pendingStudents: 0, pendingHODs: 0 }; }
+    } catch { return { totalStudents: 0, totalJobs: 0, totalApplications: 0, pendingStudents: 0, pendingTeachers: 0, pendingHODs: 0 }; }
   };
 
   // ========================
@@ -267,7 +296,7 @@ export const DataProvider = ({ children }) => {
     try {
       const data = await apiFetch('/approvals/stats', token);
       return data;
-    } catch (err) { console.error(err); return { pendingStudents: 0, pendingHods: 0, totalApproved: 0, totalRejected: 0 }; }
+    } catch (err) { console.error(err); return { pendingStudents: 0, pendingTeachers: 0, pendingHods: 0, totalApproved: 0, totalRejected: 0 }; }
   };
 
   const approveUser = async (userId) => {
@@ -313,7 +342,7 @@ export const DataProvider = ({ children }) => {
       // Applications
       getApplications, getApplicationHistory, addApplication, updateApplicationStatus,
       // Profiles
-      getProfilesByRole, getProfilesByDepartment, getAllProfiles, updateProfileRole,
+      getProfilesByRole, getProfilesByDepartment, getAllProfiles, getProfileById, updateProfileVerification, updateProfileRole, deleteProfile,
       // Stats
       getDashboardStats,
       // Recommendations

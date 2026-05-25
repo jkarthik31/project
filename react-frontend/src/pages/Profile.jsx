@@ -111,7 +111,7 @@ const Profile = () => {
     const updates = { ...formData };
     if (updates.cgpa) updates.cgpa = parseFloat(updates.cgpa);
 
-    const { error } = await updateProfile(updates);
+    const { error } = await updateProfile(null, updates);
 
     if (error) {
        setStatusMsg({ type: 'error', text: error.message || 'Failed to update profile' });
@@ -132,7 +132,7 @@ const Profile = () => {
   const completionAvg = calculateCompletion();
 
   return (
-    <div style={{ padding: '100px 20px 40px', maxWidth: '900px', margin: '0 auto' }}>
+    <div className="page-shell" style={{ maxWidth: '900px' }}>
       
       {/* Profile Header Card */}
       <div className="card" style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 'var(--spacing-xl)', marginBottom: 'var(--spacing-xl)', position: 'relative', overflow: 'hidden' }}>
@@ -200,16 +200,25 @@ const Profile = () => {
                 <div className="form-group">
                   <label>Department</label>
                   {isEditing ? (
-                    <select name="department" value={formData.department} onChange={handleChange} style={{ width: '100%', padding: 'var(--spacing-sm) var(--spacing-md)', borderRadius: 'var(--border-radius)', border: '1px solid var(--border-color)' }}>
+                    <select 
+                      name="department" 
+                      value={formData.department} 
+                      onChange={handleChange} 
+                      disabled={profile.role !== 'student' && profile.role !== 'admin'} // Teachers/HODs cannot change their own dept
+                      style={{ width: '100%', padding: 'var(--spacing-sm) var(--spacing-md)', borderRadius: 'var(--border-radius)', border: '1px solid var(--border-color)', opacity: (profile.role !== 'student' && profile.role !== 'admin') ? 0.7 : 1 }}
+                    >
                       <option value="">Select Department</option>
                       <option value="BCA">BCA</option>
-                      <option value="BCOM">BCOM</option>
                       <option value="BBA">BBA</option>
-                      <option value="BSC">BSC</option>
                       <option value="BA">BA</option>
+                      <option value="BCom">BCom</option>
+                      <option value="BSC">BSC</option>
                     </select>
                   ) : (
                     <p style={{ color: 'var(--text-primary)', fontWeight: 500 }}>{formData.department || '-'}</p>
+                  )}
+                  {(profile.role === 'hod' || profile.role === 'teacher') && isEditing && (
+                    <small style={{ color: 'var(--text-muted)', display: 'block', marginTop: '4px' }}>Department for faculty can only be changed by an Admin.</small>
                   )}
                 </div>
 

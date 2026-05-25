@@ -11,6 +11,7 @@ const Applications = () => {
   const [applications, setApplications] = useState([]);
   const [loading, setLoading] = useState(true);
   const [filterStatus, setFilterStatus] = useState('all');
+  const [selectedJob, setSelectedJob] = useState(null);
 
   useEffect(() => {
     if (!authLoading && !isLoggedIn) {
@@ -45,30 +46,31 @@ const Applications = () => {
     all: applications.length,
     applied: applications.filter(a => a.status === 'applied').length,
     shortlisted: applications.filter(a => a.status === 'shortlisted').length,
+    interview: applications.filter(a => a.status === 'interview').length,
     selected: applications.filter(a => a.status === 'selected').length,
     rejected: applications.filter(a => a.status === 'rejected').length,
   };
 
   return (
-    <div style={{ padding: '100px 20px 40px', maxWidth: '1200px', margin: '0 auto', background: 'var(--bg-light)' }}>
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 'var(--spacing-xl)', flexWrap: 'wrap', gap: 'var(--spacing-md)' }}>
+    <div className="page-shell">
+      <div className="page-header">
         <div>
-          <h1 style={{ margin: 0 }}>My Applications</h1>
-          <p style={{ color: 'var(--text-secondary)', margin: 'var(--spacing-sm) 0 0' }}>Track and manage your job applications</p>
+          <h1>My Applications</h1>
+          <p style={{ color: 'var(--text-secondary)' }}>Track and manage your job applications</p>
         </div>
         <button className="btn btn-primary" onClick={() => navigate('/jobs')}>Browse More Jobs</button>
       </div>
 
       {/* Tabs */}
       <div style={{ display: 'flex', gap: 'var(--spacing-md)', marginBottom: 'var(--spacing-xl)', overflowX: 'auto', paddingBottom: 'var(--spacing-sm)' }}>
-        {['all', 'applied', 'shortlisted', 'selected', 'rejected'].map(status => (
+        {['all', 'applied', 'shortlisted', 'interview', 'selected', 'rejected'].map(status => (
            <button 
              key={status}
              className={`btn ${filterStatus === status ? 'btn-secondary' : 'btn-outline'}`}
              onClick={() => setFilterStatus(status)}
              style={{ textTransform: 'capitalize', whiteSpace: 'nowrap' }}
            >
-             {status} ({stats[status]})
+             {status} ({stats[status] || 0})
            </button>
         ))}
       </div>
@@ -84,9 +86,9 @@ const Applications = () => {
       ) : (
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: 'var(--spacing-lg)' }}>
           {filteredApps.map(app => (
-            <div key={app.id} className="card" style={{ borderLeft: '4px solid', borderLeftColor: app.status === 'applied' ? 'var(--info)' : app.status === 'shortlisted' ? 'var(--warning)' : app.status === 'selected' ? 'var(--success)' : 'var(--danger)' }}>
+            <div key={app.id} className="card" style={{ borderLeft: '4px solid', borderLeftColor: app.status === 'applied' ? 'var(--info)' : app.status === 'shortlisted' ? 'var(--warning)' : app.status === 'interview' ? 'var(--danger)' : app.status === 'selected' ? 'var(--success)' : 'var(--danger)' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 'var(--spacing-md)' }}>
-                    <div className={`badge badge-${app.status === 'applied' ? 'info' : app.status === 'shortlisted' ? 'warning' : app.status === 'selected' ? 'success' : 'danger'}`}>
+                    <div className={`badge badge-${app.status === 'applied' ? 'info' : app.status === 'shortlisted' ? 'warning' : app.status === 'interview' ? 'danger' : app.status === 'selected' ? 'success' : 'danger'}`}>
                       {app.status.toUpperCase()}
                     </div>
                     <span style={{ fontSize: 'var(--font-size-xs)', color: 'var(--text-muted)' }}>
@@ -94,9 +96,9 @@ const Applications = () => {
                     </span>
                 </div>
                 
-                <h3 style={{ marginBottom: 'var(--spacing-xs)' }}>{app.jobs?.position || 'Unknown Position'}</h3>
+                <h3 style={{ marginBottom: 'var(--spacing-xs)' }}>{app.jobs?.title || app.job_title || 'Unknown Position'}</h3>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--spacing-sm)', marginBottom: 'var(--spacing-lg)' }}>
-                    <div style={{ width: '24px', height: '24px', borderRadius: '4px', background: 'var(--border-color)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '12px' }}>
+                    <div style={{ width: '24px', height: '24px', borderRadius: '4px', background: 'var(--border-color)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '12px', fontWeight: 'bold', color: 'var(--primary)' }}>
                       {app.jobs?.company?.charAt(0) || 'C'}
                     </div>
                     <strong style={{ color: 'var(--text-secondary)' }}>{app.jobs?.company || 'Unknown Company'}</strong>
@@ -108,10 +110,52 @@ const Applications = () => {
                 </div>
 
                 <div style={{ paddingTop: 'var(--spacing-md)', borderTop: '1px solid var(--border-color)', display: 'flex', justifyContent: 'flex-end' }}>
-                   <button className="btn btn-ghost btn-sm">View Details</button>
+                   <button className="btn btn-ghost btn-sm" onClick={() => setSelectedJob(app.jobs)}>View Details</button>
                 </div>
             </div>
           ))}
+        </div>
+      )}
+
+      {/* Job Details Modal */}
+      {selectedJob && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.7)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 9999, backdropFilter: 'blur(4px)' }}>
+          <div style={{ background: 'var(--bg-white)', borderRadius: 'var(--border-radius-lg)', padding: 'var(--spacing-xl)', maxWidth: '600px', width: '90%', maxHeight: '90vh', overflowY: 'auto', boxShadow: 'var(--shadow-xl)', border: '1px solid var(--border-color)', position: 'relative' }}>
+            <button onClick={() => setSelectedJob(null)} style={{ position: 'absolute', top: '15px', right: '15px', background: 'none', border: 'none', fontSize: '1.5rem', cursor: 'pointer', color: 'var(--text-muted)' }}>&times;</button>
+            <h2 style={{ margin: '0 0 var(--spacing-sm)', color: 'var(--primary)' }}>{selectedJob.title}</h2>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--spacing-md)', marginBottom: 'var(--spacing-lg)', color: 'var(--text-secondary)' }}>
+              <strong>{selectedJob.company}</strong>
+              <span>📍 {selectedJob.location || 'Remote'}</span>
+            </div>
+            
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--spacing-md)', marginBottom: 'var(--spacing-lg)' }}>
+              <div style={{ background: 'var(--bg-light)', padding: 'var(--spacing-sm) var(--spacing-md)', borderRadius: '8px' }}>
+                <div style={{ fontSize: '12px', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: 700 }}>Package</div>
+                <div style={{ fontWeight: 600, color: 'var(--secondary)' }}>{selectedJob.package || 'Not specified'}</div>
+              </div>
+              <div style={{ background: 'var(--bg-light)', padding: 'var(--spacing-sm) var(--spacing-md)', borderRadius: '8px' }}>
+                <div style={{ fontSize: '12px', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: 700 }}>Deadline</div>
+                <div style={{ fontWeight: 600, color: 'var(--primary)' }}>{new Date(selectedJob.deadline).toLocaleDateString()}</div>
+              </div>
+            </div>
+
+            <h4 style={{ color: 'var(--primary)', marginBottom: 'var(--spacing-xs)' }}>Description</h4>
+            <p style={{ lineHeight: 1.6, color: 'var(--text-primary)', marginBottom: 'var(--spacing-md)' }}>{selectedJob.description || 'No description provided.'}</p>
+            
+            <h4 style={{ color: 'var(--primary)', marginBottom: 'var(--spacing-xs)' }}>Requirements</h4>
+            <p style={{ lineHeight: 1.6, color: 'var(--text-primary)', marginBottom: 'var(--spacing-md)' }}>{selectedJob.requirements || 'Standard requirements apply.'}</p>
+            
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--spacing-md)', fontSize: '0.85rem', marginBottom: 'var(--spacing-lg)' }}>
+               {selectedJob.job_type && <div><strong>Type:</strong> {selectedJob.job_type}</div>}
+               {selectedJob.experience_level && <div><strong>Experience:</strong> {selectedJob.experience_level}</div>}
+               {selectedJob.work_mode && <div><strong>Mode:</strong> {selectedJob.work_mode}</div>}
+               {selectedJob.company_type && <div><strong>Company:</strong> {selectedJob.company_type}</div>}
+            </div>
+
+            <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 'var(--spacing-lg)', borderTop: '1px solid var(--border-color)', paddingTop: 'var(--spacing-md)' }}>
+              <button onClick={() => setSelectedJob(null)} className="btn btn-primary">Close</button>
+            </div>
+          </div>
         </div>
       )}
     </div>

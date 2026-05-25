@@ -15,10 +15,14 @@ const Jobs = () => {
   const [filterType, setFilterType] = useState('All');
   const [filterLocation, setFilterLocation] = useState('All');
   const [filterDept, setFilterDept] = useState('All');
+  const [filterExp, setFilterExp] = useState('All');
+  const [filterWorkMode, setFilterWorkMode] = useState('All');
+  const [filterCompanyType, setFilterCompanyType] = useState('All');
   const [packageRange, setPackageRange] = useState(50);
   
   // Track applying state for individual jobs
   const [applyingTo, setApplyingTo] = useState(null);
+  const [selectedJob, setSelectedJob] = useState(null);
   
   useEffect(() => {
     if (!authLoading && !isLoggedIn) {
@@ -28,14 +32,21 @@ const Jobs = () => {
 
   useEffect(() => {
     if (!profile) return;
-    const timeout = setTimeout(() => setLoading(false), 5000);
-    Promise.all([getJobs('active'), getApplications(profile.id)])
-      .then(([jobsData, appsData]) => {
-        setJobs(jobsData || []);
-        setApplications(appsData || []);
-      })
-      .finally(() => { setLoading(false); clearTimeout(timeout); });
-    return () => clearTimeout(timeout);
+    const loadJobsAndApps = () => {
+      setLoading(true);
+      Promise.all([getJobs('active'), getApplications(profile.id)])
+        .then(([jobsData, appsData]) => {
+          setJobs(jobsData || []);
+          setApplications(appsData || []);
+        })
+        .finally(() => setLoading(false));
+    };
+
+    loadJobsAndApps();
+    
+    // Polling to ensure eligibility updates are reflected quickly
+    const interval = setInterval(loadJobsAndApps, 10000); 
+    return () => clearInterval(interval);
   }, [profile]);
 
   const handleApply = async (jobId) => {
@@ -63,19 +74,37 @@ const Jobs = () => {
     const matchesSearch = job.title?.toLowerCase().includes(searchTerm.toLowerCase()) || 
                           job.company?.toLowerCase().includes(searchTerm.toLowerCase());
     
-    // location filter (mock matching)
+    // location filter
     let matchesLocation = true;
     if (filterLocation !== 'All') {
-      matchesLocation = job.location?.includes(filterLocation);
+      matchesLocation = job.location?.toLowerCase().trim().includes(filterLocation.toLowerCase().trim());
     }
     
-    // type filter (mock matching)
+    // type filter
     let matchesType = true;
     if (filterType !== 'All') {
-      matchesType = job.type === filterType || job.position?.includes(filterType);
+      matchesType = job.job_type === filterType || job.position?.toLowerCase().includes(filterType.toLowerCase());
+    }
+
+    // experience filter
+    let matchesExp = true;
+    if (filterExp !== 'All') {
+      matchesExp = job.experience_level === filterExp;
+    }
+
+    // work mode filter
+    let matchesWorkMode = true;
+    if (filterWorkMode !== 'All') {
+      matchesWorkMode = job.work_mode === filterWorkMode;
+    }
+
+    // company type filter
+    let matchesCompanyType = true;
+    if (filterCompanyType !== 'All') {
+      matchesCompanyType = job.company_type?.toLowerCase().trim().includes(filterCompanyType.toLowerCase().trim());
     }
     
-    // Check package (assuming job.package is a number or parseable string like "12 LPA")
+    // Check package
     let matchesPackage = true;
     if (job.package) {
        const packageVal = parseFloat(job.package);
@@ -87,12 +116,10 @@ const Jobs = () => {
     let matchesDept = true;
     if (filterDept !== 'All' && job.allowed_departments) {
       const depts = job.allowed_departments.split(',').map(d => d.trim().toUpperCase());
-      matchesDept = depts.includes(filterDept);
-    } else if (filterDept !== 'All' && !job.allowed_departments) {
-      matchesDept = true; // jobs with no dept restriction show for all
+      matchesDept = depts.includes(filterDept.toUpperCase());
     }
     
-    return matchesSearch && matchesLocation && matchesType && matchesPackage && matchesDept;
+    return matchesSearch && matchesLocation && matchesType && matchesPackage && matchesDept && matchesExp && matchesWorkMode && matchesCompanyType;
   });
 
   if (authLoading && !profile) {
@@ -104,12 +131,31 @@ const Jobs = () => {
   }
 
   return (
-    <div style={{ padding: '100px 20px 40px', maxWidth: '1200px', margin: '0 auto', background: 'var(--bg-light)' }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--spacing-md)', marginBottom: 'var(--spacing-lg)' }}>
-        <h1 style={{ margin: 0 }}>Browse Job Opportunities</h1>
-        {profile?.department && (
-          <span style={{ background: 'linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%)', color: '#fff', padding: '4px 14px', borderRadius: '20px', fontSize: 'var(--font-size-xs)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em' }}>{profile.department}</span>
-        )}
+    <div className="page-shell">
+      <div className="page-header">
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 'var(--spacing-md)' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--spacing-md)', flexWrap: 'wrap' }}>
+            <h1 style={{ margin: 0 }}>Browse Job Opportunities</h1>
+            {profile?.department && (
+              <span style={{ background: 'linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%)', color: '#fff', padding: '4px 14px', borderRadius: '20px', fontSize: 'var(--font-size-xs)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em' }}>{profile.department}</span>
+            )}
+          </div>
+          <button 
+            onClick={() => {
+              setLoading(true);
+              Promise.all([getJobs('active'), getApplications(profile?.id)])
+                .then(([jobsData, appsData]) => {
+                  setJobs(jobsData || []);
+                  setApplications(appsData || []);
+                })
+                .finally(() => setLoading(false));
+            }}
+            className="btn btn-ghost btn-sm"
+            style={{ display: 'flex', alignItems: 'center', gap: '4px' }}
+          >
+            🔄 Refresh
+          </button>
+        </div>
       </div>
       
       {/* Search and Filter */}
@@ -146,7 +192,7 @@ const Jobs = () => {
 
             <div style={{ marginBottom: 'var(--spacing-lg)', paddingBottom: 'var(--spacing-lg)', borderBottom: '1px solid rgba(0,0,0,0.05)' }}>
                 <h4 style={{ fontWeight: 700, marginBottom: 'var(--spacing-md)', color: 'var(--primary)', textTransform: 'uppercase', fontSize: 'var(--font-size-sm)' }}>Location</h4>
-                {['All', 'Bangalore', 'Mumbai', 'Delhi', 'Hyderabad'].map(loc => (
+                {['All', 'Bengaluru', 'Delhi', 'Hyderabad', 'Chennai'].map(loc => (
                   <label key={loc} style={{ display: 'flex', alignItems: 'center', gap: 'var(--spacing-sm)', marginBottom: 'var(--spacing-sm)', cursor: 'pointer', fontWeight: 'normal', textTransform: 'none' }}>
                     <input type="radio" name="location" checked={filterLocation === loc} onChange={() => setFilterLocation(loc)} />
                     {loc}
@@ -158,7 +204,7 @@ const Jobs = () => {
             {profile?.role !== 'student' && (
             <div style={{ marginBottom: 'var(--spacing-lg)', paddingBottom: 'var(--spacing-lg)', borderBottom: '1px solid rgba(0,0,0,0.05)' }}>
                 <h4 style={{ fontWeight: 700, marginBottom: 'var(--spacing-md)', color: 'var(--primary)', textTransform: 'uppercase', fontSize: 'var(--font-size-sm)' }}>Department</h4>
-                {['All', 'BCA', 'BSC', 'BCOM', 'BBA', 'BA'].map(d => (
+                {['All', 'BCA', 'BBA', 'BA', 'BCom', 'BSC'].map(d => (
                   <label key={d} style={{ display: 'flex', alignItems: 'center', gap: 'var(--spacing-sm)', marginBottom: 'var(--spacing-sm)', cursor: 'pointer', fontWeight: 'normal', textTransform: 'none' }}>
                     <input type="radio" name="department" checked={filterDept === d} onChange={() => setFilterDept(d)} />
                     {d}
@@ -166,6 +212,36 @@ const Jobs = () => {
                 ))}
             </div>
             )}
+
+            <div style={{ marginBottom: 'var(--spacing-lg)', paddingBottom: 'var(--spacing-lg)', borderBottom: '1px solid rgba(0,0,0,0.05)' }}>
+                <h4 style={{ fontWeight: 700, marginBottom: 'var(--spacing-md)', color: 'var(--primary)', textTransform: 'uppercase', fontSize: 'var(--font-size-sm)' }}>Experience</h4>
+                {['All', 'Fresher', '0-1 Years', '1-3 Years', '3-5 Years', '5+ Years'].map(exp => (
+                  <label key={exp} style={{ display: 'flex', alignItems: 'center', gap: 'var(--spacing-sm)', marginBottom: 'var(--spacing-sm)', cursor: 'pointer', fontWeight: 'normal', textTransform: 'none' }}>
+                    <input type="radio" name="experience" checked={filterExp === exp} onChange={() => setFilterExp(exp)} />
+                    {exp}
+                  </label>
+                ))}
+            </div>
+
+            <div style={{ marginBottom: 'var(--spacing-lg)', paddingBottom: 'var(--spacing-lg)', borderBottom: '1px solid rgba(0,0,0,0.05)' }}>
+                <h4 style={{ fontWeight: 700, marginBottom: 'var(--spacing-md)', color: 'var(--primary)', textTransform: 'uppercase', fontSize: 'var(--font-size-sm)' }}>Work Mode</h4>
+                {['All', 'On-site', 'Remote', 'Hybrid'].map(mode => (
+                  <label key={mode} style={{ display: 'flex', alignItems: 'center', gap: 'var(--spacing-sm)', marginBottom: 'var(--spacing-sm)', cursor: 'pointer', fontWeight: 'normal', textTransform: 'none' }}>
+                    <input type="radio" name="workMode" checked={filterWorkMode === mode} onChange={() => setFilterWorkMode(mode)} />
+                    {mode}
+                  </label>
+                ))}
+            </div>
+
+            <div style={{ marginBottom: 'var(--spacing-lg)', paddingBottom: 'var(--spacing-lg)', borderBottom: '1px solid rgba(0,0,0,0.05)' }}>
+                <h4 style={{ fontWeight: 700, marginBottom: 'var(--spacing-md)', color: 'var(--primary)', textTransform: 'uppercase', fontSize: 'var(--font-size-sm)' }}>Company Type</h4>
+                {['All', 'IT Services', 'Product Based', 'Core Engineering', 'Startup', 'MNC', 'Fintech'].map(ct => (
+                  <label key={ct} style={{ display: 'flex', alignItems: 'center', gap: 'var(--spacing-sm)', marginBottom: 'var(--spacing-sm)', cursor: 'pointer', fontWeight: 'normal', textTransform: 'none' }}>
+                    <input type="radio" name="companyType" checked={filterCompanyType === ct} onChange={() => setFilterCompanyType(ct)} />
+                    {ct}
+                  </label>
+                ))}
+            </div>
 
             <div style={{ marginBottom: 'var(--spacing-lg)' }}>
                 <h4 style={{ fontWeight: 700, marginBottom: 'var(--spacing-md)', color: 'var(--primary)', textTransform: 'uppercase', fontSize: 'var(--font-size-sm)' }}>Package up to</h4>
@@ -178,12 +254,12 @@ const Jobs = () => {
                 </div>
             </div>
 
-            <button className="btn btn-outline btn-block" onClick={() => { setSearchTerm(''); setFilterType('All'); setFilterLocation('All'); setFilterDept('All'); setPackageRange(50); }}>Clear All Filters</button>
+            <button className="btn btn-outline btn-block" onClick={() => { setSearchTerm(''); setFilterType('All'); setFilterLocation('All'); setFilterDept('All'); setFilterExp('All'); setFilterWorkMode('All'); setFilterCompanyType('All'); setPackageRange(50); }}>Clear All Filters</button>
         </div>
 
         {/* Jobs List */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--spacing-lg)' }}>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: 'var(--spacing-md)', background: 'linear-gradient(135deg, rgba(79, 70, 229, 0.05) 0%, rgba(79, 70, 229, 0.02) 100%)', border: '1px solid rgba(79, 70, 229, 0.1)', borderRadius: 'var(--border-radius-lg)' }}>
+            <div className="surface-tint" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: 'var(--spacing-md)', borderRadius: 'var(--border-radius-lg)' }}>
                 <div style={{ fontWeight: 600, background: 'linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
                     Showing {filteredJobs.length} jobs
                 </div>
@@ -192,8 +268,32 @@ const Jobs = () => {
             {filteredJobs.length === 0 ? (
                <div className="card" style={{ textAlign: 'center', padding: 'var(--spacing-2xl)' }}>
                   <div style={{ fontSize: '64px', marginBottom: 'var(--spacing-md)' }}>🔍</div>
-                  <h3 style={{ color: 'var(--text-secondary)' }}>No jobs found</h3>
-                  <p>Try adjusting your search or filters.</p>
+                  {profile?.role === 'student' ? (
+                    <>
+                      {!profile.department ? (
+                        <div style={{ textAlign: 'center' }}>
+                          <h3 style={{ color: 'var(--danger)' }}>Department Not Set</h3>
+                          <p>Please update your profile with your department to see matching jobs.</p>
+                          <button onClick={() => navigate('/profile')} className="btn btn-primary btn-sm" style={{ marginTop: 'var(--spacing-md)' }}>Go to Profile</button>
+                        </div>
+                      ) : (
+                        <>
+                          <h3 style={{ color: 'var(--text-secondary)' }}>No jobs available for {profile.department}</h3>
+                          <p>We couldn't find any active jobs for your department. Please check back later or try adjusting your filters.</p>
+                          {jobs.length > 0 && (
+                            <p style={{ fontSize: 'var(--font-size-sm)', color: 'var(--text-muted)', marginTop: 'var(--spacing-md)' }}>
+                              Tip: Try increasing the Package Range or clearing search filters.
+                            </p>
+                          )}
+                        </>
+                      )}
+                    </>
+                  ) : (
+                    <>
+                      <h3 style={{ color: 'var(--text-secondary)' }}>No jobs found</h3>
+                      <p>Try adjusting your search or filters.</p>
+                    </>
+                  )}
                </div>
             ) : (
               filteredJobs.map(job => {
@@ -218,7 +318,12 @@ const Jobs = () => {
                           <span className="badge badge-success">OPEN</span>
                           {profile?.role === 'student' && (
                             job.is_eligible === false
-                              ? <span className="badge badge-danger">✗ Not Eligible</span>
+                              ? <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                                  <span className="badge badge-danger">✗ Not Eligible</span>
+                                  {job.ineligibility_reasons?.map((reason, i) => (
+                                    <span key={i} style={{ fontSize: '0.65rem', color: 'var(--danger)', fontWeight: 600 }}>• {reason}</span>
+                                  ))}
+                                </div>
                               : job.is_eligible === true
                                 ? <span className="badge badge-success">✓ Eligible</span>
                                 : null
@@ -236,9 +341,12 @@ const Jobs = () => {
                       )}
 
                       <div style={{ display: 'flex', flexWrap: 'wrap', gap: 'var(--spacing-md)', marginBottom: 'var(--spacing-md)', fontSize: 'var(--font-size-sm)', color: 'var(--text-secondary)' }}>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--spacing-xs)' }}>Location: {job.location || 'Remote'}</div>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--spacing-xs)' }}>Role: {job.position || 'Full-time'}</div>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--spacing-xs)' }}>Deadline: {new Date(job.deadline).toLocaleDateString()}</div>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--spacing-xs)' }}>📍 {job.location || 'Remote'}</div>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--spacing-xs)' }}>💼 {job.position || 'Full-time'}</div>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--spacing-xs)' }}>📅 {new Date(job.deadline).toLocaleDateString()}</div>
+                          {job.work_mode && <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--spacing-xs)' }}>🏠 {job.work_mode}</div>}
+                          {job.job_type && <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--spacing-xs)' }}>⏱️ {job.job_type}</div>}
+                          {job.experience_level && <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--spacing-xs)' }}>🎓 {job.experience_level}</div>}
                       </div>
 
                       <p style={{ color: 'var(--text-secondary)', marginBottom: 'var(--spacing-sm)', lineHeight: 1.7 }}>
@@ -277,13 +385,14 @@ const Jobs = () => {
                           </div>
                           <div style={{ display: 'flex', gap: 'var(--spacing-md)' }}>
                               <button 
-                                className={`btn ${applied ? 'btn-secondary' : 'btn-accent'}`} 
+                                className={`btn ${applied ? 'btn-secondary' : 'btn-accent'}`}
                                 onClick={() => handleApply(job.id)}
-                                disabled={applied || isApplying}
-                                style={applied ? { opacity: 0.8, cursor: 'default' } : {}}
+                                disabled={applied || isApplying || (profile?.role === 'student' && job.is_eligible === false)}
+                                style={applied || (profile?.role === 'student' && job.is_eligible === false) ? { opacity: 0.8, cursor: 'default' } : {}}
                               >
-                                {isApplying ? 'Applying...' : applied ? 'Applied' : 'Apply Now'}
+                                {isApplying ? 'Applying...' : applied ? 'Applied' : (profile?.role === 'student' && job.is_eligible === false) ? 'Not Eligible' : 'Apply Now'}
                               </button>
+                              <button className="btn btn-outline" onClick={() => setSelectedJob(job)}>View</button>
                               <button className="btn btn-ghost">Save</button>
                           </div>
                       </div>
@@ -293,6 +402,48 @@ const Jobs = () => {
             )}
         </div>
       </div>
+
+      {/* Job Details Modal */}
+      {selectedJob && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.7)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 9999, backdropFilter: 'blur(4px)' }}>
+          <div style={{ background: 'var(--bg-white)', borderRadius: 'var(--border-radius-lg)', padding: 'var(--spacing-xl)', maxWidth: '600px', width: '90%', maxHeight: '90vh', overflowY: 'auto', boxShadow: 'var(--shadow-xl)', border: '1px solid var(--border-color)', position: 'relative' }}>
+            <button onClick={() => setSelectedJob(null)} style={{ position: 'absolute', top: '15px', right: '15px', background: 'none', border: 'none', fontSize: '1.5rem', cursor: 'pointer', color: 'var(--text-muted)' }}>&times;</button>
+            <h2 style={{ margin: '0 0 var(--spacing-sm)', color: 'var(--primary)' }}>{selectedJob.title}</h2>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--spacing-md)', marginBottom: 'var(--spacing-lg)', color: 'var(--text-secondary)' }}>
+              <strong>{selectedJob.company}</strong>
+              <span>📍 {selectedJob.location || 'Remote'}</span>
+            </div>
+            
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--spacing-md)', marginBottom: 'var(--spacing-lg)' }}>
+              <div style={{ background: 'var(--bg-light)', padding: 'var(--spacing-sm) var(--spacing-md)', borderRadius: '8px' }}>
+                <div style={{ fontSize: '12px', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: 700 }}>Package</div>
+                <div style={{ fontWeight: 600, color: 'var(--secondary)' }}>{selectedJob.package || 'Not specified'}</div>
+              </div>
+              <div style={{ background: 'var(--bg-light)', padding: 'var(--spacing-sm) var(--spacing-md)', borderRadius: '8px' }}>
+                <div style={{ fontSize: '12px', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: 700 }}>Deadline</div>
+                <div style={{ fontWeight: 600, color: 'var(--primary)' }}>{new Date(selectedJob.deadline).toLocaleDateString()}</div>
+              </div>
+            </div>
+
+            <h4 style={{ color: 'var(--primary)', marginBottom: 'var(--spacing-xs)' }}>Description</h4>
+            <p style={{ lineHeight: 1.6, color: 'var(--text-primary)', marginBottom: 'var(--spacing-md)' }}>{selectedJob.description || 'No description provided.'}</p>
+            
+            <h4 style={{ color: 'var(--primary)', marginBottom: 'var(--spacing-xs)' }}>Requirements</h4>
+            <p style={{ lineHeight: 1.6, color: 'var(--text-primary)', marginBottom: 'var(--spacing-md)' }}>{selectedJob.requirements || 'Standard requirements apply.'}</p>
+            
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--spacing-md)', fontSize: '0.85rem', marginBottom: 'var(--spacing-lg)' }}>
+               {selectedJob.job_type && <div><strong>Type:</strong> {selectedJob.job_type}</div>}
+               {selectedJob.experience_level && <div><strong>Experience:</strong> {selectedJob.experience_level}</div>}
+               {selectedJob.work_mode && <div><strong>Mode:</strong> {selectedJob.work_mode}</div>}
+               {selectedJob.company_type && <div><strong>Company:</strong> {selectedJob.company_type}</div>}
+            </div>
+
+            <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 'var(--spacing-lg)', borderTop: '1px solid var(--border-color)', paddingTop: 'var(--spacing-md)' }}>
+              <button onClick={() => setSelectedJob(null)} className="btn btn-primary">Close</button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

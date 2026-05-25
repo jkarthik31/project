@@ -18,21 +18,33 @@ router.get('/', async (req, res) => {
       params.push(status);
     }
 
-    // Department-based filtering
+    // Department-based filtering logic
     if (req.user.role === 'student') {
-      // Students only see jobs that include their department (or have no dept restriction)
-      const [profiles] = await db.query('SELECT cgpa, department, skills FROM profiles WHERE id = ?', [req.user.id]);
-      const student = profiles[0] || {};
-      const studentDept = (student.department || '').trim();
+      // Students MUST see only jobs that include their department
+      const [profiles] = await db.query('SELECT department FROM profiles WHERE id = ?', [req.user.id]);
+      const studentDept = (profiles[0]?.department || '').trim();
 
-      if (studentDept) {
-        conditions.push("(allowed_departments IS NULL OR allowed_departments = '' OR FIND_IN_SET(?, REPLACE(allowed_departments, ' ', '')) > 0)");
-        params.push(studentDept);
+      if (!studentDept) {
+        return res.json({ jobs: [], message: 'Please update your profile with your department.' });
+      }
+
+      // Match student department in allowed_departments (comma separated string)
+      // Use a more robust check that handles spaces and case sensitivity correctly
+      conditions.push("(allowed_departments IS NULL OR allowed_departments = '' OR LOWER(allowed_departments) LIKE ?)");
+      params.push(`%${studentDept.toLowerCase()}%`);
+    } else if (req.user.role === 'hod' || req.user.role === 'teacher') {
+      // HOD/Teacher only see jobs for their own department by default
+      const [profiles] = await db.query('SELECT department FROM profiles WHERE id = ?', [req.user.id]);
+      const userDept = (profiles[0]?.department || '').trim();
+      
+      if (userDept) {
+        conditions.push("(allowed_departments IS NULL OR allowed_departments = '' OR LOWER(allowed_departments) LIKE ?)");
+        params.push(`%${userDept.toLowerCase()}%`);
       }
     } else if (department) {
-      // Explicit department filter (from query param)
-      conditions.push("(allowed_departments IS NULL OR allowed_departments = '' OR FIND_IN_SET(?, REPLACE(allowed_departments, ' ', '')) > 0)");
-      params.push(department);
+      // Admin or explicit department filter
+      conditions.push("(allowed_departments IS NULL OR allowed_departments = '' OR LOWER(allowed_departments) LIKE ?)");
+      params.push(`%${department.toLowerCase()}%`);
     }
 
     if (conditions.length > 0) {
@@ -41,15 +53,17 @@ router.get('/', async (req, res) => {
     query += ' ORDER BY created_at DESC';
     const [jobs] = await db.query(query, params);
 
-    // If student, calculate eligibility including skills
+    // If student, calculate eligibility including skills, CGPA, resume status, and placement eligibility
     if (req.user.role === 'student') {
       const [profiles] = await db.query(
-        'SELECT cgpa, department, skills FROM profiles WHERE id = ?',
+        'SELECT cgpa, department, skills, resume_status, eligibility_status FROM profiles WHERE id = ?',
         [req.user.id]
       );
       const student = profiles[0] || {};
       const studentCgpa = parseFloat(student.cgpa) || 0;
       const studentDept = (student.department || '').toLowerCase().trim();
+      const studentResumeStatus = student.resume_status || 'Pending';
+      const studentEligibilityStatus = student.eligibility_status || 'Training Pending';
       const studentSkills = (student.skills || '')
         .split(',')
         .map(s => s.trim().toLowerCase())
@@ -60,6 +74,21 @@ router.get('/', async (req, res) => {
         const reasons = [];
         const missing_skills = [];
 
+        // Global Eligibility Checks (Placement Portal Rules)
+        const resumeStatusClean = (studentResumeStatus || 'Pending').toLowerCase().trim();
+        const eligStatusClean = (studentEligibilityStatus || 'Training Pending').toLowerCase().trim();
+
+        if (resumeStatusClean !== 'approved') {
+          isEligible = false;
+          reasons.push(`Resume Status: ${studentResumeStatus || 'Pending'} (Needs "Approved")`);
+        }
+
+        if (eligStatusClean !== 'eligible for placement') {
+          isEligible = false;
+          reasons.push(`Eligibility: ${studentEligibilityStatus || 'Training Pending'} (Needs "Eligible for Placement")`);
+        }
+
+        // Job-specific Eligibility Checks
         if (job.min_cgpa && studentCgpa < parseFloat(job.min_cgpa)) {
           isEligible = false;
           reasons.push(`Requires CGPA ≥ ${job.min_cgpa}`);
@@ -91,6 +120,7 @@ router.get('/', async (req, res) => {
 
     res.json({ jobs });
   } catch (err) {
+    console.error('Error fetching jobs:', err);
     res.status(500).json({ error: 'Server error.' });
   }
 });
@@ -116,27 +146,43 @@ router.post('/', async (req, res) => {
     title, company, position, description, location,
     package: pkg, requirements, required_skills = '',
     min_cgpa = 0.00, allowed_departments = '',
-    allowed_batches = '', deadline, status = 'active'
+    allowed_batches = '', deadline, status = 'active',
+    job_type = '', experience_level = '', work_mode = '', company_type = ''
   } = req.body;
 
   if (!title || !company || !position) {
     return res.status(400).json({ error: 'Title, company, and position are required.' });
   }
 
-  // HOD auto-tags their department if none specified
+  // HOD Restriction: Can only post for their own department by default, or multiple if allowed
   let finalDepts = allowed_departments;
-  if (req.user.role === 'hod' && (!finalDepts || finalDepts.trim() === '')) {
+  if (req.user.role === 'hod') {
     const [hodProfile] = await db.query('SELECT department FROM profiles WHERE id = ?', [req.user.id]);
-    finalDepts = hodProfile[0]?.department || '';
+    const hodDept = hodProfile[0]?.department || '';
+    if (!hodDept) {
+      return res.status(403).json({ error: 'HOD must have a department assigned to post jobs.' });
+    }
+    
+    // If HOD provided departments, ensure their own department is one of them or they are authorized
+    // For now, we allow them to post for any departments they select, 
+    // but if none selected, we default to their own.
+    if (!finalDepts || finalDepts.trim() === '') {
+      finalDepts = hodDept;
+    }
   }
 
   try {
     const [result] = await db.query(
-      `INSERT INTO jobs (title, company, position, description, location, package, requirements,
-        required_skills, min_cgpa, allowed_departments, allowed_batches, deadline, status, created_by)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-      [title, company, position, description, location, pkg, requirements,
-       required_skills, min_cgpa, finalDepts, allowed_batches, deadline, status, req.user.id]
+      `INSERT INTO jobs (
+        title, company, position, description, location, package, requirements,
+        required_skills, min_cgpa, allowed_departments, allowed_batches, deadline, 
+        status, created_by, job_type, experience_level, work_mode, company_type
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      [
+        title, company, position, description, location, pkg, requirements,
+        required_skills, min_cgpa, finalDepts, allowed_batches, deadline, 
+        status, req.user.id, job_type, experience_level, work_mode, company_type
+      ]
     );
     const [rows] = await db.query('SELECT * FROM jobs WHERE id = ?', [result.insertId]);
     const newJob = rows[0];
@@ -146,8 +192,8 @@ router.post('/', async (req, res) => {
       try {
         let studentQuery = `SELECT id FROM profiles WHERE role='student'`;
         const studentParams = [];
-        if (allowed_departments && allowed_departments.trim() !== '') {
-          const depts = allowed_departments.split(',').map(d => `'${d.trim()}'`).join(',');
+        if (finalDepts && finalDepts.trim() !== '') {
+          const depts = finalDepts.split(',').map(d => `'${d.trim()}'`).join(',');
           studentQuery += ` AND department IN (${depts})`;
         }
         if (min_cgpa && parseFloat(min_cgpa) > 0) {
@@ -170,6 +216,7 @@ router.post('/', async (req, res) => {
 
     res.status(201).json({ job: newJob });
   } catch (err) {
+    console.error('Error creating job:', err);
     res.status(500).json({ error: 'Server error.' });
   }
 });
@@ -179,8 +226,34 @@ router.put('/:id', async (req, res) => {
   if (!['admin', 'hod'].includes(req.user.role)) {
     return res.status(403).json({ error: 'Forbidden.' });
   }
-  const { title, company, position, description, location, package: pkg, requirements, min_cgpa, allowed_departments, allowed_batches, deadline, status } = req.body;
+  
+  const { 
+    title, company, position, description, location, package: pkg, 
+    requirements, min_cgpa, allowed_departments, allowed_batches, 
+    deadline, status, job_type, experience_level, work_mode, company_type 
+  } = req.body;
+
   try {
+    // Check if the user has permission to edit this job
+    const [existingJob] = await db.query('SELECT created_by, allowed_departments FROM jobs WHERE id = ?', [req.params.id]);
+    if (existingJob.length === 0) return res.status(404).json({ error: 'Job not found.' });
+
+    if (req.user.role === 'hod') {
+      const [hodProfile] = await db.query('SELECT department FROM profiles WHERE id = ?', [req.user.id]);
+      const hodDept = hodProfile[0]?.department || '';
+      
+      // HOD can only edit jobs for their department
+      const jobDepts = existingJob[0].allowed_departments || '';
+      if (!jobDepts.includes(hodDept)) {
+        return res.status(403).json({ error: 'HOD can only manage jobs for their own department.' });
+      }
+      
+      // If HOD tries to change departments, prevent it or force it to stay their department
+      if (allowed_departments && allowed_departments !== hodDept) {
+        return res.status(403).json({ error: 'HOD cannot change job eligibility to other departments.' });
+      }
+    }
+
     await db.query(
       `UPDATE jobs SET
         title = COALESCE(?, title),
@@ -194,13 +267,23 @@ router.put('/:id', async (req, res) => {
         allowed_departments = COALESCE(?, allowed_departments),
         allowed_batches = COALESCE(?, allowed_batches),
         deadline = COALESCE(?, deadline),
-        status = COALESCE(?, status)
+        status = COALESCE(?, status),
+        job_type = COALESCE(?, job_type),
+        experience_level = COALESCE(?, experience_level),
+        work_mode = COALESCE(?, work_mode),
+        company_type = COALESCE(?, company_type)
        WHERE id = ?`,
-      [title, company, position, description, location, pkg, requirements, min_cgpa, allowed_departments, allowed_batches, deadline, status, req.params.id]
+      [
+        title, company, position, description, location, pkg, 
+        requirements, min_cgpa, allowed_departments, allowed_batches, 
+        deadline, status, job_type, experience_level, work_mode, 
+        company_type, req.params.id
+      ]
     );
     const [rows] = await db.query('SELECT * FROM jobs WHERE id = ?', [req.params.id]);
     res.json({ job: rows[0] });
   } catch (err) {
+    console.error('Error updating job:', err);
     res.status(500).json({ error: 'Server error.' });
   }
 });

@@ -48,12 +48,24 @@ router.get('/overview', requireStaff, async (req, res) => {
       params
     );
 
+    let jobFilter = "WHERE status='active'";
+    const jobParams = [];
+    if (['hod', 'teacher'].includes(req.user.role)) {
+      const [p] = await db.query('SELECT department FROM profiles WHERE id = ?', [req.user.id]);
+      const dept = p[0]?.department;
+      if (dept) {
+        jobFilter += " AND (allowed_departments IS NULL OR allowed_departments = '' OR FIND_IN_SET(?, REPLACE(allowed_departments, ' ', '')) > 0)";
+        jobParams.push(dept);
+      }
+    }
     const [[{ total_jobs }]] = await db.query(
-      "SELECT COUNT(*) as total_jobs FROM jobs WHERE status='active'"
+      `SELECT COUNT(*) as total_jobs FROM jobs ${jobFilter}`,
+      jobParams
     );
 
     const [[{ highest_package }]] = await db.query(
-      "SELECT MAX(CAST(REGEXP_REPLACE(package, '[^0-9.]', '') AS DECIMAL(10,2))) as highest_package FROM jobs"
+      `SELECT MAX(CAST(REGEXP_REPLACE(package, '[^0-9.]', '') AS DECIMAL(10,2))) as highest_package FROM jobs ${jobFilter}`,
+      jobParams
     );
 
     const placement_rate = total_students > 0

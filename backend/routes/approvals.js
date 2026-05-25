@@ -23,14 +23,16 @@ const notify = async (userId, type, title, message, link = null) => {
 // ────────────────────────────────────────────────────────────
 router.get('/stats', requireRole('admin', 'hod'), async (req, res) => {
   try {
-    let pendingStudents = 0, pendingHods = 0, totalApproved = 0, totalRejected = 0;
+    let pendingStudents = 0, pendingTeachers = 0, pendingHods = 0, totalApproved = 0, totalRejected = 0;
 
     if (req.user.role === 'admin') {
       const [[s]] = await db.query("SELECT COUNT(*) AS c FROM profiles WHERE role = 'student' AND approval_status = 'pending'");
+      const [[t]] = await db.query("SELECT COUNT(*) AS c FROM profiles WHERE role = 'teacher' AND approval_status = 'pending'");
       const [[h]] = await db.query("SELECT COUNT(*) AS c FROM profiles WHERE role = 'hod' AND approval_status = 'pending'");
       const [[a]] = await db.query("SELECT COUNT(*) AS c FROM profiles WHERE approval_status = 'approved'");
       const [[r]] = await db.query("SELECT COUNT(*) AS c FROM profiles WHERE approval_status = 'rejected'");
       pendingStudents = s.c;
+      pendingTeachers = t.c;
       pendingHods = h.c;
       totalApproved = a.c;
       totalRejected = r.c;
@@ -47,7 +49,7 @@ router.get('/stats', requireRole('admin', 'hod'), async (req, res) => {
       }
     }
 
-    res.json({ pendingStudents, pendingHods, totalApproved, totalRejected });
+    res.json({ pendingStudents, pendingTeachers, pendingHods, totalApproved, totalRejected });
   } catch (err) {
     console.error('Approval stats error:', err);
     res.status(500).json({ error: 'Server error.' });
